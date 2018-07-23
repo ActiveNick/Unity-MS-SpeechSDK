@@ -1,5 +1,7 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using Microsoft.CognitiveServices.Speech;
 using UnityEngine;
@@ -9,8 +11,18 @@ public class SpeechManager : MonoBehaviour {
     SpeechFactory factory;
     SpeechRecognizer recognizer;
 
-	// Use this for initialization
-	void Start () {
+    static SpeechManager()
+    {
+        String currentPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Process);
+        String dllPath = Environment.CurrentDirectory + Path.DirectorySeparatorChar + "Assets" + Path.DirectorySeparatorChar + "Plugins";
+        if (currentPath.Contains(dllPath) == false)
+        {
+            Environment.SetEnvironmentVariable("PATH", currentPath + Path.PathSeparator + dllPath, EnvironmentVariableTarget.Process);
+        }
+    }
+
+    // Use this for initialization
+    void Start () {
 
         // Creates an instance of a speech factory with specified
         // subscription key and service region. Replace with your own subscription key
