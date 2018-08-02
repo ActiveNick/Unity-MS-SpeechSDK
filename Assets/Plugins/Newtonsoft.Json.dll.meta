@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 93f7be5c443b1634caacb28f43b1f0b5
+guid: d087ad3f7f2212d418dbf39dc5559cd7
 PluginImporter:
   externalObjects: {}
   serializedVersion: 2
@@ -13,20 +13,22 @@ PluginImporter:
     second:
       enabled: 0
       settings:
-        Exclude Android: 1
+        Exclude Android: 0
         Exclude Editor: 0
         Exclude Linux: 0
         Exclude Linux64: 0
         Exclude LinuxUniversal: 0
+        Exclude OSXIntel: 1
+        Exclude OSXIntel64: 1
         Exclude OSXUniversal: 0
         Exclude WebGL: 1
-        Exclude Win: 1
+        Exclude Win: 0
         Exclude Win64: 0
-        Exclude WindowsStoreApps: 0
+        Exclude WindowsStoreApps: 1
   - first:
       Android: Android
     second:
-      enabled: 0
+      enabled: 1
       settings:
         CPU: ARMv7
   - first:
@@ -39,15 +41,15 @@ PluginImporter:
     second:
       enabled: 1
       settings:
-        CPU: x86_64
+        CPU: AnyCPU
         DefaultValueInitialized: true
-        OS: Windows
+        OS: AnyOS
   - first:
       Facebook: Win
     second:
       enabled: 0
       settings:
-        CPU: None
+        CPU: AnyCPU
   - first:
       Facebook: Win64
     second:
@@ -73,17 +75,29 @@ PluginImporter:
       settings:
         CPU: AnyCPU
   - first:
+      Standalone: OSXIntel
+    second:
+      enabled: 0
+      settings:
+        CPU: AnyCPU
+  - first:
+      Standalone: OSXIntel64
+    second:
+      enabled: 0
+      settings:
+        CPU: AnyCPU
+  - first:
       Standalone: OSXUniversal
     second:
       enabled: 1
       settings:
-        CPU: AnyCPU
+        CPU: None
   - first:
       Standalone: Win
     second:
-      enabled: 0
+      enabled: 1
       settings:
-        CPU: None
+        CPU: AnyCPU
   - first:
       Standalone: Win64
     second:
@@ -91,14 +105,19 @@ PluginImporter:
       settings:
         CPU: AnyCPU
   - first:
+      WebGL: WebGL
+    second:
+      enabled: 0
+      settings: {}
+  - first:
       Windows Store Apps: WindowsStoreApps
     second:
-      enabled: 1
+      enabled: 0
       settings:
-        CPU: X64
-        DontProcess: true
+        CPU: AnyCPU
+        DontProcess: false
         PlaceholderPath: 
-        SDK: UWP
+        SDK: AnySDK
         ScriptingBackend: AnyScriptingBackend
   userData: 
   assetBundleName: 

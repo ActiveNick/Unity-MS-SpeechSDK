@@ -1,37 +1,64 @@
-﻿using System;
+﻿//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license.
+//
+// Microsoft Cognitive Services (formerly Project Oxford): 
+// https://www.microsoft.com/cognitive-services
+//
+// New Speech Service: 
+// https://docs.microsoft.com/en-us/azure/cognitive-services/Speech-Service/
+// Old Bing Speech SDK: 
+// https://docs.microsoft.com/en-us/azure/cognitive-services/Speech/home
+//
+// Copyright (c) Microsoft Corporation
+// All rights reserved.
+//
+// MIT License:
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
+//
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED ""AS IS"", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+
+// Comment the following line if you want to use the old Bing Speech SDK
+// instead of the new Speech Service.
+#define USENEWSPEECHSDK
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.CognitiveServices.Speech;
 using UnityEngine;
+using SpeechRecognitionService;
+using System.IO;
 
 public class SpeechManager : MonoBehaviour {
 
-    SpeechFactory factory;
-    SpeechRecognizer recognizer;
-
-    static SpeechManager()
-    {
-        String currentPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Process);
-        String dllPath = Environment.CurrentDirectory + Path.DirectorySeparatorChar + "Assets" + Path.DirectorySeparatorChar + "Plugins";
-        if (currentPath.Contains(dllPath) == false)
-        {
-            Environment.SetEnvironmentVariable("PATH", currentPath + Path.PathSeparator + dllPath, EnvironmentVariableTarget.Process);
-        }
-    }
+    CogSvcSocketAuthentication auth;
+    bool isAuthenticated = false;
+    SpeechRecognitionClient recoServiceClient;
+    string region;
 
     // Use this for initialization
     void Start () {
+        Debug.Log($"Initiating Cognitive Services Speech Recognition Service.");
 
-        // Creates an instance of a speech factory with specified
-        // subscription key and service region. Replace with your own subscription key
-        // and service region (e.g., "westus").
-        factory = SpeechFactory.FromSubscription("f69d77d425e946e69a954c53db135f77", "westus");
-
-        recognizer = factory.CreateSpeechRecognizer();
-
-        StartSpeechRecognitionAsync();
+        InitializeSpeechRecognitionService();
     }
 
     // Update is called once per frame
@@ -39,31 +66,108 @@ public class SpeechManager : MonoBehaviour {
 		
 	}
 
-    public async void StartSpeechRecognitionAsync()
+    /// <summary>
+    /// InitializeSpeechRecognitionService
+    /// </summary>
+    private void InitializeSpeechRecognitionService()
     {
-        // Performs recognition.
-        // RecognizeAsync() returns when the first utterance has been recognized, so it is suitable 
-        // only for single shot recognition like command or query. For long-running recognition, use
-        // StartContinuousRecognitionAsync() instead.
-        var result = await recognizer.RecognizeAsync();
+        // If you see an API key below, it's a trial key and will either expire soon or get invalidated. Please get your own key.
+        // Get your own trial key to Bing Speech or the new Speech Service at https://azure.microsoft.com/try/cognitive-services
+        // Create an Azure Cognitive Services Account: https://docs.microsoft.com/azure/cognitive-services/cognitive-services-apis-create-account
 
-        // Checks result.
-        if (result.RecognitionStatus != RecognitionStatus.Recognized)
-        {
-            Debug.Log($"Recognition status: {result.RecognitionStatus.ToString()}");
-            if (result.RecognitionStatus == RecognitionStatus.Canceled)
-            {
-                Debug.Log($"There was an error, reason: {result.RecognitionFailureReason}");
-            }
-            else
-            {
-                Debug.Log("No speech could be recognized.\n");
-            }
-        }
-        else
-        {
-            Debug.Log($"We recognized: {result.Text}");
-        }
+        // DELETE THE NEXT THREE LINE ONCE YOU HAVE OBTAINED YOUR OWN SPEECH API KEY
+        //Debug.Log("You forgot to initialize the sample with your own Speech API key. Visit https://azure.microsoft.com/try/cognitive-services to get started.");
+        //Console.ReadLine();
+        //return;
+        // END DELETE
+#if USENEWSPEECHSDK
+        bool useClassicBingSpeechService = false;
+        //string authenticationKey = @"INSERT-YOUR-NEW-SPEECH-API-KEY-HERE";
+        string authenticationKey = @"f69d77d425e946e69a954c53db135f77";
+#else
+        bool useClassicBingSpeechService = true;
+        //string authenticationKey = @"INSERT-YOUR-BING-SPEECH-API-KEY-HERE";
+        string authenticationKey = @"4d5a1beefe364f8986d63a877ebd51d5";
+#endif
 
+        Debug.Log($"Instantiating Cognitive Services Speech Recognition Service client.");
+        recoServiceClient = new SpeechRecognitionClient(useClassicBingSpeechService);
+        
+        // Make sure to match the region to the Azure region where you created the service.
+        // Note the region is NOT used for the old Bing Speech service
+        region = "westus";
+
+        auth = new CogSvcSocketAuthentication();
+        Task<string> authenticating = auth.Authenticate(authenticationKey, region, useClassicBingSpeechService);
+
+        // Since the authentication process needs to run asynchronously, we run the code in a coroutine to
+        // avoid blocking the main Unity thread.
+        // Make sure you have successfully obtained a token before making any Speech Service calls.
+        StartCoroutine(AuthenticateSpeechService(authenticating));
+
+        // Register an event to capture recognition events
+        Debug.Log($"Registering Speech Recognition event handler.");
+        recoServiceClient.OnMessageReceived += RecoServiceClient_OnMessageReceived;
     }
+
+    /// <summary>
+    /// CoRoutine that checks to see if the async authentication process has completed. Once it completes,
+    /// retrieves the token that will be used for subsequent Cognitive Services Text-to-Speech API calls.
+    /// </summary>
+    /// <param name="authenticating"></param>
+    /// <returns></returns>
+    private IEnumerator AuthenticateSpeechService(Task<string> authenticating)
+    {
+        // Yield control back to the main thread as long as the task is still running
+        while (!authenticating.IsCompleted)
+        {
+            yield return null;
+        }
+
+        try
+        {
+            isAuthenticated = true;
+            Debug.Log($"Authentication token obtained: {auth.GetAccessToken()}");
+        }
+        catch (Exception ex)
+        {
+            Debug.Log("Failed authentication.");
+            Debug.Log(ex.ToString());
+            Debug.Log(ex.Message);
+        }
+    }
+
+    public void StartSpeechRecognitionJob()
+    {
+        // Replace this with your own file. Add it to the project and mark it as "Content" and "Copy if newer".
+        string audioFilePath = Path.Combine(Application.streamingAssetsPath, "Thisisatest.wav");
+        Debug.Log($"Using speech audio file located at {audioFilePath}");
+
+        Debug.Log($"Creating Speech Recognition job.");
+        Task<bool> recojob = recoServiceClient.CreateSpeechRecognitionJob(audioFilePath, auth.GetAccessToken(), region);
+
+        StartCoroutine(CompleteSpeechRecognitionJob(recojob));
+        Debug.Log($"Speech Recognition job started.");
+    }
+
+    IEnumerator CompleteSpeechRecognitionJob(Task<bool> recojob)
+    {
+        // Yield control back to the main thread as long as the task is still running
+        while (!recojob.IsCompleted)
+        {
+            yield return null;
+        }
+        Debug.Log($"Speech Recognition job completed.");
+    }
+
+    private static void RecoServiceClient_OnMessageReceived(SpeechServiceResult result)
+    {
+        // Let's ignore all hypotheses and other messages for now and only report back on the final phrase
+        if (result.Path == SpeechServiceResult.SpeechMessagePaths.SpeechPhrase)
+        {
+            Debug.Log("* RECOGNITION STATUS: " + result.Result.RecognitionStatus);
+            Debug.Log("* FINAL RESULT: " + result.Result.DisplayText);
+        }
+    }
+
 }
