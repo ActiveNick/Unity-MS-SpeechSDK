@@ -148,6 +148,7 @@ public class SpeechManager : MonoBehaviour {
     }
 
     /// <summary>
+    /// Feeds a pre-recorded speech audio file to the Speech Recognition service.
     /// Triggered from btnStartReco UI Canvas button.
     /// </summary>
     public void StartSpeechRecognitionFromFile()
@@ -164,18 +165,22 @@ public class SpeechManager : MonoBehaviour {
     }
 
     /// <summary>
+    /// Starts recording the user's voice via microphone and then feeds the audio data
+    /// to the Speech Recognition service.
     /// Triggered from btnStartMicrophone UI Canvas button.
     /// </summary>
     public void StartSpeechRecognitionFromMicrophone()
     {
-        audio.clip = Microphone.Start(Microphone.devices[0], true, maxRecordingDuration, 22050);
+        Debug.Log("Initializing microphone for recording.");
+        // Passing null for deviceName in Microphone methods to use the default microphone.
+        audio.clip = Microphone.Start(null, true, maxRecordingDuration, 22050);
         audio.loop = true;
-
-        
-        
+               
         // Wait until the microphone starts recording
         while (!(Microphone.GetPosition(null) > 0)) { } ;
         isRecording = true;
+        audio.Play();
+        Debug.Log("Microphone recording has started.");
     }
 
     IEnumerator CompleteSpeechRecognitionJob(Task<bool> recojob)
@@ -187,6 +192,12 @@ public class SpeechManager : MonoBehaviour {
         }
         Debug.Log($"Speech Recognition job completed.");
     }
+
+    void OnAudioFilterRead(float[] data, int channels)
+    {
+        Debug.Log($"Received audio data of size: {data.Length} - First sample: {data[0]}");
+    }
+
 
     /// <summary>
     /// RecoServiceClient_OnMessageReceived event handler:
