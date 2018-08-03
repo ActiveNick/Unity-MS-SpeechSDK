@@ -55,13 +55,18 @@ public class SpeechManager : MonoBehaviour {
 
     // Private fields
     CogSvcSocketAuthentication auth;
-    bool isAuthenticated = false;
     SpeechRecognitionClient recoServiceClient;
+    AudioSource audio;
+    bool isAuthenticated = false;
+    bool isRecording = false;
+    int maxRecordingDuration = 10;  // in seconds
     string region;
 
     // Use this for initialization
     void Start () {
         Debug.Log($"Initiating Cognitive Services Speech Recognition Service.");
+
+        audio = GetComponent<AudioSource>();
 
         InitializeSpeechRecognitionService();
     }
@@ -142,7 +147,10 @@ public class SpeechManager : MonoBehaviour {
         }
     }
 
-    public void StartSpeechRecognitionJob()
+    /// <summary>
+    /// Triggered from btnStartReco UI Canvas button.
+    /// </summary>
+    public void StartSpeechRecognitionFromFile()
     {
         // Replace this with your own file. Add it to the project and mark it as "Content" and "Copy if newer".
         string audioFilePath = Path.Combine(Application.streamingAssetsPath, "Thisisatest.wav");
@@ -153,6 +161,21 @@ public class SpeechManager : MonoBehaviour {
 
         StartCoroutine(CompleteSpeechRecognitionJob(recojob));
         Debug.Log($"Speech Recognition job started.");
+    }
+
+    /// <summary>
+    /// Triggered from btnStartMicrophone UI Canvas button.
+    /// </summary>
+    public void StartSpeechRecognitionFromMicrophone()
+    {
+        audio.clip = Microphone.Start(Microphone.devices[0], true, maxRecordingDuration, 22050);
+        audio.loop = true;
+
+        
+        
+        // Wait until the microphone starts recording
+        while (!(Microphone.GetPosition(null) > 0)) { } ;
+        isRecording = true;
     }
 
     IEnumerator CompleteSpeechRecognitionJob(Task<bool> recojob)
