@@ -41,14 +41,19 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.UI;
 using SpeechRecognitionService;
-using System.IO;
 
 public class SpeechManager : MonoBehaviour {
 
+    // Public fields
+    public Text DisplayLabel;
+
+    // Private fields
     CogSvcSocketAuthentication auth;
     bool isAuthenticated = false;
     SpeechRecognitionClient recoServiceClient;
@@ -160,11 +165,23 @@ public class SpeechManager : MonoBehaviour {
         Debug.Log($"Speech Recognition job completed.");
     }
 
-    private static void RecoServiceClient_OnMessageReceived(SpeechServiceResult result)
+    /// <summary>
+    /// RecoServiceClient_OnMessageReceived event handler:
+    /// This event handler gets fired every time a new message comes back via WebSocket.
+    /// </summary>
+    /// <param name="result"></param>
+    private void RecoServiceClient_OnMessageReceived(SpeechServiceResult result)
     {
-        // Let's ignore all hypotheses and other messages for now and only report back on the final phrase
-        if (result.Path == SpeechServiceResult.SpeechMessagePaths.SpeechPhrase)
+        if (result.Path == SpeechServiceResult.SpeechMessagePaths.SpeechHypothesis)
         {
+            DisplayLabel.text = result.Result.Text;
+            DisplayLabel.fontStyle = FontStyle.Italic;
+        }
+        else if (result.Path == SpeechServiceResult.SpeechMessagePaths.SpeechPhrase)
+        {
+            DisplayLabel.text = result.Result.DisplayText;
+            DisplayLabel.fontStyle = FontStyle.Normal;
+
             Debug.Log("* RECOGNITION STATUS: " + result.Result.RecognitionStatus);
             Debug.Log("* FINAL RESULT: " + result.Result.DisplayText);
         }
