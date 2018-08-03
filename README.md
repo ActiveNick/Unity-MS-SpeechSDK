@@ -1,8 +1,9 @@
 # Unity-MS-SpeechSDK
-Sample Unity project used to demonstrate Speech Recognition using the new [Microsoft Speech Service](https://docs.microsoft.com/en-us/azure/cognitive-services/Speech-Service/) (currently in Preview) via WebSockets. This is a work in progress. The Microsoft Speech Service is part of [Microsoft Azure Cognitive Services](https://www.microsoft.com/cognitive-services). 
+Sample Unity project used to demonstrate Speech Recognition (aka Speech-to-Text) using the new [Microsoft Speech Service](https://docs.microsoft.com/en-us/azure/cognitive-services/Speech-Service/) (currently in Preview) via WebSockets. This is a work in progress. The Microsoft Speech Service is part of [Microsoft Azure Cognitive Services](https://www.microsoft.com/cognitive-services). 
 
-**Unity version: 2018.2.1f1**
-**Speech Service version: 0.5.0** (Preview)
+* **Unity version:** 2018.2.1f1
+* **Speech Service version:** 0.5.0 (Preview)
+* **Target platforms tested:** Unity Editor/Mono (*to be tested*: Windows Desktop, UWP/WMR, Android, iOS)
 
 ## Implementation Notes
 * This sample uses the WebSockets API to interact with the Speech Service and generate speech recognition hypotheses in real-time.
@@ -15,3 +16,9 @@ Sample Unity project used to demonstrate Speech Recognition using the new [Micro
 * [Microsoft Cognitive Services](https://www.microsoft.com/cognitive-services) (formerly Project Oxford)
 * [New Cognitive Services Speech Service](https://docs.microsoft.com/en-us/azure/cognitive-services/Speech-Service/) (currently in Preview)
 * [Classic Bing Speech Service](https://docs.microsoft.com/en-us/azure/cognitive-services/Speech/home) (legacy)
+* [Unity Speech Synthesis Sample](https://github.com/ActiveNick/Unity-Text-to-Speech) (aka Text-to-Speech)
+
+## Follow Me
+* Twitter: [@ActiveNick](http://twitter.com/ActiveNick)
+* Blog: [AgeofMobility.com](http://AgeofMobility.com)
+* SlideShare: [http://www.slideshare.net/ActiveNick](http://www.slideshare.net/ActiveNick)
