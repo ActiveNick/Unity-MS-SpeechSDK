@@ -196,6 +196,10 @@ public class SpeechManager : MonoBehaviour {
     void OnAudioFilterRead(float[] data, int channels)
     {
         Debug.Log($"Received audio data of size: {data.Length} - First sample: {data[0]}");
+        for(int i = 0; i < data.Length; i++)
+        {
+            data[i] = 0.0f;
+        }
     }
 
 
