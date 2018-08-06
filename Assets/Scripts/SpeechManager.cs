@@ -158,7 +158,7 @@ public class SpeechManager : MonoBehaviour {
         Debug.Log($"Using speech audio file located at {audioFilePath}");
 
         Debug.Log($"Creating Speech Recognition job.");
-        Task<bool> recojob = recoServiceClient.CreateSpeechRecognitionJob(audioFilePath, auth.GetAccessToken(), region);
+        Task<bool> recojob = recoServiceClient.CreateSpeechRecognitionJobFromFile(audioFilePath, auth.GetAccessToken(), region);
 
         StartCoroutine(CompleteSpeechRecognitionJob(recojob));
         Debug.Log($"Speech Recognition job started.");

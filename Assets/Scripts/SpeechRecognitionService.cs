@@ -51,6 +51,8 @@ namespace SpeechRecognitionService
         // Public Fields
         public string RecognizedText { get; set; }
         public SpeechServiceResult LastMessageReceived { get; set; }
+        public ClientWebSocket SpeechWebSocketClient { get; set; }
+        public string CurrentRequestId { get; set; }
 
         // Private fields
         bool useClassicBingSpeechService = false;
@@ -66,95 +68,26 @@ namespace SpeechRecognitionService
             useClassicBingSpeechService = usebingspeechservice;
         }
 
-        public async Task<bool> CreateSpeechRecognitionJob(string audioFilePath, string authenticationToken, string region)
+        public async Task<bool> CreateSpeechRecognitionJobFromFile(string audioFilePath, string authenticationToken, string region)
         {
             try
             {
-                // Configuring Speech Service Web Socket client header
-                Debug.Log("Connecting to Speech Service via Web Socket.");
-                ClientWebSocket websocketClient = new ClientWebSocket();
+                SpeechWebSocketClient = await InitializeSpeechWebSocketClient(authenticationToken, region);
 
-                string connectionId = Guid.NewGuid().ToString("N");
-
-                // Make sure to change the region & culture to match your recorded audio file.
-                string lang = "en-US";
-                websocketClient.Options.SetRequestHeader("X-ConnectionId", connectionId);
-                websocketClient.Options.SetRequestHeader("Authorization", "Bearer " + authenticationToken);
-
-                // Clients must use an appropriate endpoint of Speech Service. The endpoint is based on recognition mode and language.
-                // The supported recognition modes are:
-                //  - interactive
-                //  - conversation
-                //  - dictation
-                var url = "";
-                if (!useClassicBingSpeechService)
-                {
-                    // New Speech Service endpoint. 
-                    url = $"wss://{region}.stt.speech.microsoft.com/speech/recognition/interactive/cognitiveservices/v1?format=simple&language={lang}";
-                }
-                else
-                {
-                    // Bing Speech endpoint
-                    url = $"wss://speech.platform.bing.com/speech/recognition/interactive/cognitiveservices/v1?format=simple&language={lang}";
-                }
-
-                await websocketClient.ConnectAsync(new Uri(url), new CancellationToken());
-                Debug.Log("Web Socket successfully connected.");
-
-                var receiving = Receiving(websocketClient);
+                var receiving = Receiving(SpeechWebSocketClient);
 
                 var sending = Task.Run(async () =>
                 {
-                    // CONFIGURING SPEECH SERVICE:
-                    // The payload of the speech.config message is a JSON structure
-                    // that contains information about the application.
-                    dynamic SpeechConfigPayload = new
-                    {
-                        context = new
-                        {
-                            system = new
-                            {
-                                version = "1.0.00000"
-                            },
-                            os = new
-                            {
-                                platform = "Speech Service WebSocket Console App",
-                                name = "Sample",
-                                version = "1.0.00000"
-                            },
-                            device = new
-                            {
-                                manufacturer = "Microsoft",
-                                model = "SpeechSample",
-                                version = "1.0.00000"
-                            }
-                        }
-                    };
-
                     // Create a unique request ID, must be a UUID in "no-dash" format
                     var requestId = Guid.NewGuid().ToString("N");
 
-                    // Convert speech.config payload to JSON
-                    var SpeechConfigPayloadJson = JsonConvert.SerializeObject(SpeechConfigPayload, Formatting.None);
+                    ArraySegment<byte> buffer = CreateSpeechConfigMessagePayloadBuffer(requestId);
 
-                    // Create speech.config message from required headers and JSON payload
-                    StringBuilder speechMsgBuilder = new StringBuilder();
-                    speechMsgBuilder.Append("path:speech.config" + Environment.NewLine);
-                    speechMsgBuilder.Append("x-requestid:" + requestId + Environment.NewLine);
-                    speechMsgBuilder.Append($"x-timestamp:{DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffK")}" + Environment.NewLine);
-                    speechMsgBuilder.Append($"content-type:application/json; charset=utf-8" + Environment.NewLine);
-                    speechMsgBuilder.Append(Environment.NewLine);
-                    speechMsgBuilder.Append(SpeechConfigPayloadJson);
-                    var strh = speechMsgBuilder.ToString();
-
-                    var encoded = Encoding.UTF8.GetBytes(speechMsgBuilder.ToString());
-                    var buffer = new ArraySegment<byte>(encoded, 0, encoded.Length);
-
-                    if (websocketClient.State != WebSocketState.Open) return;
+                    if (SpeechWebSocketClient.State != WebSocketState.Open) return;
 
                     Debug.Log("Sending speech.config...");
                     // Send speech.config to Speech Service
-                    await websocketClient.SendAsync(buffer, WebSocketMessageType.Text, true, new CancellationToken());
+                    await SpeechWebSocketClient.SendAsync(buffer, WebSocketMessageType.Text, true, new CancellationToken());
                     Debug.Log("speech.config sent successfully!");
 
                     // SENDING AUDIO TO SPEECH SERVICE:
@@ -182,20 +115,15 @@ namespace SpeechRecognitionService
                         var arrSeg = new ArraySegment<byte>(arr, 0, arr.Length);
 
                         Debug.Log($"Sending audio data from position: {cursor}");
-                        if (websocketClient.State != WebSocketState.Open) return;
+                        if (SpeechWebSocketClient.State != WebSocketState.Open) return;
                         cursor += byteLen;
                         var end = cursor >= audioFileInfo.Length;
-                        await websocketClient.SendAsync(arrSeg, WebSocketMessageType.Binary, true, new CancellationToken());
+                        await SpeechWebSocketClient.SendAsync(arrSeg, WebSocketMessageType.Binary, true, new CancellationToken());
                         Debug.Log($"Audio data from file {audioFilePath} sent successfully!");
 
                         var dt = Encoding.ASCII.GetString(arr);
                     }
-                    // Send an audio message with a zero-length body. This message tells the service that the client knows
-                    // that the user stopped speaking, the utterance is finished, and the microphone is turned off
-                    headerBytes = BuildAudioHeader(requestId);
-                    headerHead = CreateAudioHeaderHead(headerBytes);
-                    var arrEnd = headerHead.Concat(headerBytes).ToArray();
-                    await websocketClient.SendAsync(new ArraySegment<byte>(arrEnd, 0, arrEnd.Length), WebSocketMessageType.Binary, true, new CancellationToken());
+                    await SendEmptyAudioMessageToWebSocketClient(SpeechWebSocketClient, requestId);
                     audioFileStream.Dispose();
                 });
 
@@ -216,11 +144,183 @@ namespace SpeechRecognitionService
             }
             catch (Exception ex)
             {
-                Debug.Log("An exception occurred during creation of Speech Recognition job:" + Environment.NewLine + ex.Message);
+                Debug.Log($"An exception occurred during creation of Speech Recognition job from audio file {audioFilePath}:" 
+                    + Environment.NewLine + ex.Message);
                 return false;
             }
         }
 
+        public async Task<bool> CreateSpeechRecognitionJobFromVoice(string authenticationToken, string region)
+        {
+            try
+            {
+                SpeechWebSocketClient = await InitializeSpeechWebSocketClient(authenticationToken, region);
+
+                var receiving = Receiving(SpeechWebSocketClient);
+
+                var sending = Task.Run(async () =>
+                {
+                    // Create a unique request ID, must be a UUID in "no-dash" format
+                    CurrentRequestId = Guid.NewGuid().ToString("N");
+
+                    ArraySegment<byte> buffer = CreateSpeechConfigMessagePayloadBuffer(CurrentRequestId);
+
+                    if (SpeechWebSocketClient.State != WebSocketState.Open) return;
+
+                    Debug.Log("Sending speech.config...");
+                    // Send speech.config to Speech Service
+                    await SpeechWebSocketClient.SendAsync(buffer, WebSocketMessageType.Text, true, new CancellationToken());
+                    Debug.Log("speech.config sent successfully!");
+
+                    // SENDING AUDIO TO SPEECH SERVICE:
+                    // Speech-enabled client applications send audio to Speech Service by converting the audio stream
+                    // into a series of audio chunks. Each chunk of audio carries a segment of the spoken audio that's
+                    // to be transcribed by the service. The maximum size of a single audio chunk is 8,192 bytes.
+                    // Audio stream messages are Binary WebSocket messages.
+                    Debug.Log($"WebSocket Client is now ready to receive audio packets from the microphone: ");
+                });
+
+                // Wait for tasks to complete
+                await Task.WhenAll(sending, receiving);
+                if (sending.IsFaulted)
+                {
+                    var err = sending.Exception;
+                    throw err;
+                }
+                if (receiving.IsFaulted)
+                {
+                    var err = receiving.Exception;
+                    throw err;
+                }
+
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.Log($"An exception occurred during creation of Speech Recognition job from microphone:" 
+                    + Environment.NewLine + ex.Message);
+                return false;
+            }
+        }
+
+        private async Task<ClientWebSocket> InitializeSpeechWebSocketClient(string authenticationToken, string region)
+        {
+            // Configuring Speech Service Web Socket client header
+            Debug.Log("Connecting to Speech Service via Web Socket.");
+            ClientWebSocket websocketClient = new ClientWebSocket();
+
+            string connectionId = Guid.NewGuid().ToString("N");
+
+            // Make sure to change the region & culture to match your recorded audio file.
+            string lang = "en-US";
+            websocketClient.Options.SetRequestHeader("X-ConnectionId", connectionId);
+            websocketClient.Options.SetRequestHeader("Authorization", "Bearer " + authenticationToken);
+
+            // Clients must use an appropriate endpoint of Speech Service. The endpoint is based on recognition mode and language.
+            // The supported recognition modes are:
+            //  - interactive
+            //  - conversation
+            //  - dictation
+            var url = "";
+            if (!useClassicBingSpeechService)
+            {
+                // New Speech Service endpoint. 
+                url = $"wss://{region}.stt.speech.microsoft.com/speech/recognition/interactive/cognitiveservices/v1?format=simple&language={lang}";
+            }
+            else
+            {
+                // Bing Speech endpoint
+                url = $"wss://speech.platform.bing.com/speech/recognition/interactive/cognitiveservices/v1?format=simple&language={lang}";
+            }
+
+            await websocketClient.ConnectAsync(new Uri(url), new CancellationToken());
+            Debug.Log("Web Socket successfully connected.");
+
+            return websocketClient;
+        }
+
+        /// <summary>
+        /// Prepares the payload (with headers) for the very first config message to be sent over WebSocket.
+        /// </summary>
+        /// <param name="requestId"></param>
+        /// <returns></returns>
+        private static ArraySegment<byte> CreateSpeechConfigMessagePayloadBuffer(string requestId)
+        {
+            dynamic SpeechConfigPayload = CreateSpeechConfigPayload();
+
+            // Convert speech.config payload to JSON
+            var SpeechConfigPayloadJson = JsonConvert.SerializeObject(SpeechConfigPayload, Formatting.None);
+
+            // Create speech.config message from required headers and JSON payload
+            StringBuilder speechMsgBuilder = new StringBuilder();
+            speechMsgBuilder.Append("path:speech.config" + Environment.NewLine);
+            speechMsgBuilder.Append("x-requestid:" + requestId + Environment.NewLine);
+            speechMsgBuilder.Append($"x-timestamp:{DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffK")}" + Environment.NewLine);
+            speechMsgBuilder.Append($"content-type:application/json; charset=utf-8" + Environment.NewLine);
+            speechMsgBuilder.Append(Environment.NewLine);
+            speechMsgBuilder.Append(SpeechConfigPayloadJson);
+            var strh = speechMsgBuilder.ToString();
+
+            var encoded = Encoding.UTF8.GetBytes(speechMsgBuilder.ToString());
+            var buffer = new ArraySegment<byte>(encoded, 0, encoded.Length);
+            return buffer;
+        }
+
+        /// <summary>
+        /// CONFIGURING SPEECH SERVICE
+        /// The payload of the speech.config message is a JSON structure
+        /// that contains information about the application.
+        /// </summary>
+        /// <returns></returns>
+        private static dynamic CreateSpeechConfigPayload()
+        {
+            return new
+            {
+                context = new
+                {
+                    system = new
+                    {
+                        version = "1.0.00000"
+                    },
+                    os = new
+                    {
+                        platform = "Speech Service WebSocket Console App",
+                        name = "Sample",
+                        version = "1.0.00000"
+                    },
+                    device = new
+                    {
+                        manufacturer = "Microsoft",
+                        model = "SpeechSample",
+                        version = "1.0.00000"
+                    }
+                }
+            };
+        }
+
+        /// <summary>
+        /// Send an audio message with a zero-length body. This message tells the service that the client knows
+        /// that the user stopped speaking, the utterance is finished, and the microphone is turned off.
+        /// </summary>
+        /// <param name="websocketClient"></param>
+        /// <param name="requestId"></param>
+        /// <returns></returns>
+        private async Task SendEmptyAudioMessageToWebSocketClient(ClientWebSocket websocketClient, string requestId)
+        {
+            byte[] headerBytes;
+            byte[] headerHead;
+            headerBytes = BuildAudioHeader(requestId);
+            headerHead = CreateAudioHeaderHead(headerBytes);
+            var arrEnd = headerHead.Concat(headerBytes).ToArray();
+            await websocketClient.SendAsync(new ArraySegment<byte>(arrEnd, 0, arrEnd.Length), WebSocketMessageType.Binary, true, new CancellationToken());
+        }
+
+        /// <summary>
+        /// Creates the header for an audio message  to be sent via WebSockets.
+        /// </summary>
+        /// <param name="requestid"></param>
+        /// <returns></returns>
         private byte[] BuildAudioHeader(string requestid)
         {
             StringBuilder speechMsgBuilder = new StringBuilder();
@@ -243,7 +343,9 @@ namespace SpeechRecognitionService
             return headerHead;
         }
 
-        // Allows the WebSocket client to receive messages in a background task
+        /// <summary>
+        /// Allows the WebSocket client to receive messages in a background task.
+        /// </summary>
         private async Task Receiving(ClientWebSocket client)
         {
             try
