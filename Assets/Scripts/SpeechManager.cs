@@ -59,6 +59,7 @@ public class SpeechManager : MonoBehaviour {
     AudioSource audio;
     bool isAuthenticated = false;
     bool isRecording = false;
+    string requestId;
     int maxRecordingDuration = 10;  // in seconds
     string region;
 
@@ -157,7 +158,7 @@ public class SpeechManager : MonoBehaviour {
         string audioFilePath = Path.Combine(Application.streamingAssetsPath, "Thisisatest.wav");
         Debug.Log($"Using speech audio file located at {audioFilePath}");
 
-        Debug.Log($"Creating Speech Recognition job.");
+        Debug.Log($"Creating Speech Recognition job from audio file.");
         Task<bool> recojob = recoServiceClient.CreateSpeechRecognitionJobFromFile(audioFilePath, auth.GetAccessToken(), region);
 
         StartCoroutine(CompleteSpeechRecognitionJob(recojob));
@@ -171,16 +172,45 @@ public class SpeechManager : MonoBehaviour {
     /// </summary>
     public void StartSpeechRecognitionFromMicrophone()
     {
-        Debug.Log("Initializing microphone for recording.");
-        // Passing null for deviceName in Microphone methods to use the default microphone.
-        audio.clip = Microphone.Start(null, true, maxRecordingDuration, 22050);
-        audio.loop = true;
-               
-        // Wait until the microphone starts recording
-        while (!(Microphone.GetPosition(null) > 0)) { } ;
-        isRecording = true;
-        audio.Play();
-        Debug.Log("Microphone recording has started.");
+        Debug.Log($"Creating Speech Recognition job from microphone.");
+        Task<bool> recojob = recoServiceClient.CreateSpeechRecognitionJobFromVoice(auth.GetAccessToken(), region);
+
+        StartCoroutine(WaitUntilRecoServiceIsReady());
+
+    }
+
+    /// <summary>
+    /// CoRoutine that waits until the Speech Recognition job has been started.
+    /// </summary>
+    /// <returns></returns>
+    IEnumerator WaitUntilRecoServiceIsReady()
+    {
+        while (recoServiceClient.State != SpeechRecognitionClient.JobState.ReadyForAudioPackets &&
+            recoServiceClient.State != SpeechRecognitionClient.JobState.Error)
+        {
+            yield return null;
+        }
+
+        if (recoServiceClient.State != SpeechRecognitionClient.JobState.ReadyForAudioPackets) {
+
+            requestId = recoServiceClient.CurrentRequestId;
+
+            Debug.Log("Initializing microphone for recording.");
+            // Passing null for deviceName in Microphone methods to use the default microphone.
+            audio.clip = Microphone.Start(null, true, maxRecordingDuration, 22050);
+            audio.loop = true;
+
+            // Wait until the microphone starts recording
+            while (!(Microphone.GetPosition(null) > 0)) { };
+            isRecording = true;
+            audio.Play();
+            Debug.Log("Microphone recording has started.");
+        } 
+        else
+        {
+            // Something went wrong during job initialization, handle it
+            Debug.Log("Something went wrong during job initialization.");
+        }
     }
 
     IEnumerator CompleteSpeechRecognitionJob(Task<bool> recojob)
@@ -196,6 +226,10 @@ public class SpeechManager : MonoBehaviour {
     void OnAudioFilterRead(float[] data, int channels)
     {
         Debug.Log($"Received audio data of size: {data.Length} - First sample: {data[0]}");
+
+        recoServiceClient.SendAudioPacket(requestId, data);
+
+        // Mute all the samples to avoid audio feedback into the microphone
         for(int i = 0; i < data.Length; i++)
         {
             data[i] = 0.0f;

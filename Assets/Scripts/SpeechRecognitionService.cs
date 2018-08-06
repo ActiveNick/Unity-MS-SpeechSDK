@@ -48,14 +48,23 @@ namespace SpeechRecognitionService
 {
     public class SpeechRecognitionClient
     {
+        // The various job states of the service. Ready & Completed both indicate the service is ready to
+        // receive a new job. The latter indicates a job was completed and a new one is ready.
+        public enum JobState { Initializing, Ready, PreparingJob, ReadyForAudioPackets, ProcessingAudio, Completed, Error }
+
         // Public Fields
         public string RecognizedText { get; set; }
         public SpeechServiceResult LastMessageReceived { get; set; }
         public ClientWebSocket SpeechWebSocketClient { get; set; }
         public string CurrentRequestId { get; set; }
+        public JobState State
+        {
+            get { return state; }
+        }
 
         // Private fields
         bool useClassicBingSpeechService = false;
+        private JobState state;
 
         // Events Definition
         public delegate void MessageReceived(SpeechServiceResult result);
@@ -63,15 +72,20 @@ namespace SpeechRecognitionService
 
         public SpeechRecognitionClient(bool usebingspeechservice = false)
         {
+            state = JobState.Initializing;
             // Set usebingspeechservice to true in  the client constructor if you want to use the old Bing Speech SDK
             // instead of the new Speech Service.
             useClassicBingSpeechService = usebingspeechservice;
+
+            state = JobState.Ready;
         }
 
         public async Task<bool> CreateSpeechRecognitionJobFromFile(string audioFilePath, string authenticationToken, string region)
         {
             try
             {
+                state = JobState.PreparingJob;
+
                 SpeechWebSocketClient = await InitializeSpeechWebSocketClient(authenticationToken, region);
 
                 var receiving = Receiving(SpeechWebSocketClient);
@@ -98,6 +112,8 @@ namespace SpeechRecognitionService
                     Debug.Log($"Preparing to send audio file: {audioFilePath}");
                     FileInfo audioFileInfo = new FileInfo(audioFilePath);
                     FileStream audioFileStream = audioFileInfo.OpenRead();
+
+                    state = JobState.ProcessingAudio;
 
                     byte[] headerBytes;
                     byte[] headerHead;
@@ -131,11 +147,13 @@ namespace SpeechRecognitionService
                 await Task.WhenAll(sending, receiving);
                 if (sending.IsFaulted)
                 {
+                    state = JobState.Error;
                     var err = sending.Exception;
                     throw err;
                 }
                 if (receiving.IsFaulted)
                 {
+                    state = JobState.Error;
                     var err = receiving.Exception;
                     throw err;
                 }
@@ -144,6 +162,7 @@ namespace SpeechRecognitionService
             }
             catch (Exception ex)
             {
+                state = JobState.Error;
                 Debug.Log($"An exception occurred during creation of Speech Recognition job from audio file {audioFilePath}:" 
                     + Environment.NewLine + ex.Message);
                 return false;
@@ -154,6 +173,8 @@ namespace SpeechRecognitionService
         {
             try
             {
+                state = JobState.PreparingJob;
+
                 SpeechWebSocketClient = await InitializeSpeechWebSocketClient(authenticationToken, region);
 
                 var receiving = Receiving(SpeechWebSocketClient);
@@ -178,6 +199,8 @@ namespace SpeechRecognitionService
                     // to be transcribed by the service. The maximum size of a single audio chunk is 8,192 bytes.
                     // Audio stream messages are Binary WebSocket messages.
                     Debug.Log($"WebSocket Client is now ready to receive audio packets from the microphone: ");
+
+                    state = JobState.ReadyForAudioPackets;
                 });
 
                 // Wait for tasks to complete
@@ -204,6 +227,12 @@ namespace SpeechRecognitionService
             }
         }
 
+        /// <summary>
+        /// Prepares the WebSocket Client with the proper header and Uri for the Speech Service.
+        /// </summary>
+        /// <param name="authenticationToken"></param>
+        /// <param name="region"></param>
+        /// <returns></returns>
         private async Task<ClientWebSocket> InitializeSpeechWebSocketClient(string authenticationToken, string region)
         {
             // Configuring Speech Service Web Socket client header
@@ -299,6 +328,11 @@ namespace SpeechRecognitionService
             };
         }
 
+        public void SendAudioPacket(string requestId, float[] data)
+        {
+
+        }
+
         /// <summary>
         /// Send an audio message with a zero-length body. This message tells the service that the client knows
         /// that the user stopped speaking, the utterance is finished, and the microphone is turned off.
@@ -378,6 +412,7 @@ namespace SpeechRecognitionService
                             else if(wssr.Path == SpeechServiceResult.SpeechMessagePaths.SpeechPhrase)
                             {
                                 RecognizedText = wssr.Result.DisplayText;
+                                state = JobState.Completed;
                             }
                             // Raise an event with the message we just received.
                             // We also keep the last message received in case the client app didn't subscribe to the event.
