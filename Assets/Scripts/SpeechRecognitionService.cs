@@ -198,7 +198,7 @@ namespace SpeechRecognitionService
                     // into a series of audio chunks. Each chunk of audio carries a segment of the spoken audio that's
                     // to be transcribed by the service. The maximum size of a single audio chunk is 8,192 bytes.
                     // Audio stream messages are Binary WebSocket messages.
-                    Debug.Log($"WebSocket Client is now ready to receive audio packets from the microphone: ");
+                    Debug.Log($"WebSocket Client is now ready to receive audio packets from the microphone.");
 
                     state = JobState.ReadyForAudioPackets;
                 });
@@ -328,8 +328,26 @@ namespace SpeechRecognitionService
             };
         }
 
-        public void SendAudioPacket(string requestId, float[] data)
+        public void SendAudioPacket(string requestId, byte[] data)
         {
+            byte[] headerBytes;
+            byte[] headerHead;
+            headerBytes = BuildAudioHeader(requestId);
+            headerHead = CreateAudioHeaderHead(headerBytes);
+
+            // PCM audio must be sampled at 16 kHz with 16 bits per sample and one channel (riff-16khz-16bit-mono-pcm).
+            //var fbuff = new byte[byteLen];
+            //audioFileStream.Read(fbuff, 0, byteLen);
+
+            var arr = headerHead.Concat(headerBytes).Concat(data).ToArray();
+            var arrSeg = new ArraySegment<byte>(arr, 0, arr.Length);
+
+            Debug.Log($"Sending audio data sample from microphone.");
+            if (SpeechWebSocketClient.State != WebSocketState.Open) return;
+            SpeechWebSocketClient.SendAsync(arrSeg, WebSocketMessageType.Binary, true, new CancellationToken());
+            Debug.Log($"Audio data packet from microphone sent successfully!");
+
+            //var dt = Encoding.ASCII.GetString(arr);
 
         }
 

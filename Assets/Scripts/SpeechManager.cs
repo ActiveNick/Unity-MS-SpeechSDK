@@ -63,6 +63,13 @@ public class SpeechManager : MonoBehaviour {
     int maxRecordingDuration = 10;  // in seconds
     string region;
 
+    // Microphone Recording Parameters
+    int numChannels = 1;
+    int samplingResolution = 16;
+    int samplingRate = 22050;
+    int recordingSamples = 0;
+    List<byte> recordingData;
+
     // Use this for initialization
     void Start () {
         Debug.Log($"Initiating Cognitive Services Speech Recognition Service.");
@@ -191,7 +198,7 @@ public class SpeechManager : MonoBehaviour {
             yield return null;
         }
 
-        if (recoServiceClient.State != SpeechRecognitionClient.JobState.ReadyForAudioPackets) {
+        if (recoServiceClient.State == SpeechRecognitionClient.JobState.ReadyForAudioPackets) {
 
             requestId = recoServiceClient.CurrentRequestId;
 
@@ -223,20 +230,6 @@ public class SpeechManager : MonoBehaviour {
         Debug.Log($"Speech Recognition job completed.");
     }
 
-    void OnAudioFilterRead(float[] data, int channels)
-    {
-        Debug.Log($"Received audio data of size: {data.Length} - First sample: {data[0]}");
-
-        recoServiceClient.SendAudioPacket(requestId, data);
-
-        // Mute all the samples to avoid audio feedback into the microphone
-        for(int i = 0; i < data.Length; i++)
-        {
-            data[i] = 0.0f;
-        }
-    }
-
-
     /// <summary>
     /// RecoServiceClient_OnMessageReceived event handler:
     /// This event handler gets fired every time a new message comes back via WebSocket.
@@ -259,4 +252,93 @@ public class SpeechManager : MonoBehaviour {
         }
     }
 
+    void OnAudioFilterRead(float[] data, int channels)
+    {
+        //Debug.Log($"Received audio data of size: {data.Length} - First sample: {data[0]}");
+        Debug.Log($"Received audio data of size: {data.Length}");
+
+        var audiodata = new byte[data.Length];
+
+        // Mute all the samples to avoid audio feedback into the microphone
+        for (int i = 0; i < data.Length; i++)
+        {
+            audiodata[i] = (byte)(int)(byte.MaxValue * data[i]);
+            data[i] = 0.0f;
+        }
+        if (isRecording)
+        {
+            recordingData.AddRange(audiodata);
+            recordingSamples += audiodata.Length;
+        }
+        //recoServiceClient.SendAudioPacket(requestId, audiodata);
+    }
+
+    public void StartRecording()
+    {
+        Debug.Log("Initializing microphone for recording to audio file.");
+        recordingData = new List<byte>();
+        recordingSamples = 0;
+
+        // Passing null for deviceName in Microphone methods to use the default microphone.
+        audio.clip = Microphone.Start(null, true, 1, samplingRate);
+        audio.loop = true;
+
+        // Wait until the microphone starts recording
+        while (!(Microphone.GetPosition(null) > 0)) { };
+        isRecording = true;
+        audio.Play();
+        Debug.Log("Microphone recording has started.");
+    }
+
+    public void StopRecording()
+    {
+        Debug.Log("Stopping microphone recording.");
+        audio.Stop();
+        Microphone.End(null);
+        isRecording = false;
+
+        var audioData = new byte[recordingData.Count];
+        recordingData.CopyTo(audioData);
+        WriteAudioDataToRiffWAVFile(audioData);
+    }
+
+    private void WriteAudioDataToRiffWAVFile(byte [] audiodata)
+    {
+        string filePath = Path.Combine(Application.temporaryCachePath, "recording.wav");
+        Debug.Log($"Opening new WAV file for recording: {filePath}");
+
+        FileStream fs = new FileStream(filePath, FileMode.Create);
+        BinaryWriter wr = new BinaryWriter(fs);
+
+        int bytesPerSample = samplingResolution / 8;
+
+        // Writing WAV header
+        Debug.Log($"Writing WAV header to file with a count of {recordingSamples} samples.");
+        wr.Write(System.Text.Encoding.UTF8.GetBytes("RIFF"), 0, 4);
+        wr.Write(BitConverter.GetBytes(36 + recordingSamples * numChannels * bytesPerSample), 0, 4);
+        wr.Write(System.Text.Encoding.UTF8.GetBytes("WAVE"), 0, 4);
+        wr.Write(System.Text.Encoding.UTF8.GetBytes("fmt "), 0, 4);  // Format chunk marker. Includes trailing null 
+        wr.Write(BitConverter.GetBytes(samplingResolution), 0, 4);    // e.g. 16 bits
+        UInt16 two = 2;
+        UInt16 one = 1;
+        wr.Write(BitConverter.GetBytes(one), 0, 2);     // Type of format (1 is PCM) - 2 byte integer 
+        wr.Write(BitConverter.GetBytes(numChannels), 0, 2);
+        wr.Write(BitConverter.GetBytes(samplingRate), 0, 4);
+        wr.Write(BitConverter.GetBytes(samplingRate * bytesPerSample * numChannels), 0, 4);   // byte rate
+        wr.Write(BitConverter.GetBytes(bytesPerSample * numChannels), 0, 2);    // block align
+        wr.Write(BitConverter.GetBytes(samplingResolution), 0, 2);
+        wr.Write(System.Text.Encoding.UTF8.GetBytes("data"), 0, 4);  // "data" chunk header. Marks the beginning of the data section. 
+        wr.Write(BitConverter.GetBytes(recordingSamples * bytesPerSample * numChannels), 0, 4);  // Size of the data section. 
+
+        Debug.Log($"Writing {audiodata.Length} WAV data samples to file.");
+        for (int i = 0; i < audiodata.Length; i++)
+        {
+            //wr.Write(audiodata[i]);
+            wr.Write(BitConverter.GetBytes(0));
+        }
+
+        wr.Close();
+        fs.Close();
+        Debug.Log($"Completed writing {audiodata.Length} WAV data samples to file.");
+    }
 }
