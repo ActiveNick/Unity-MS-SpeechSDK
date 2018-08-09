@@ -64,18 +64,22 @@ public class SpeechManager : MonoBehaviour {
     string region;
 
     // Microphone Recording Parameters
-    int numChannels = 1;
+    int numChannels = 2;
     int samplingResolution = 16;
-    int samplingRate = 22050;
+    int samplingRate = 44100;
     int recordingSamples = 0;
     List<byte> recordingData;
 
     // Use this for initialization
     void Start () {
-        Debug.Log($"Initiating Cognitive Services Speech Recognition Service.");
-
         audio = GetComponent<AudioSource>();
+        Debug.Log($"Audio settings playback rate currently set to {AudioSettings.outputSampleRate}Hz");
+        // We need to make sure the microphone records at the same sampling rate as the audio
+        // settings since we are using an audio filter to capture samples.
+        samplingRate = AudioSettings.outputSampleRate;
 
+        Debug.Log($"Initiating Cognitive Services Speech Recognition Service.");
+        
         InitializeSpeechRecognitionService();
     }
 
@@ -180,10 +184,11 @@ public class SpeechManager : MonoBehaviour {
     public void StartSpeechRecognitionFromMicrophone()
     {
         Debug.Log($"Creating Speech Recognition job from microphone.");
-        Task<bool> recojob = recoServiceClient.CreateSpeechRecognitionJobFromVoice(auth.GetAccessToken(), region);
+        // Temporarily disabling this feature until it's fixed with the new sampling method
 
-        StartCoroutine(WaitUntilRecoServiceIsReady());
+        //Task<bool> recojob = recoServiceClient.CreateSpeechRecognitionJobFromVoice(auth.GetAccessToken(), region);
 
+        //StartCoroutine(WaitUntilRecoServiceIsReady());
     }
 
     /// <summary>
@@ -204,7 +209,7 @@ public class SpeechManager : MonoBehaviour {
 
             Debug.Log("Initializing microphone for recording.");
             // Passing null for deviceName in Microphone methods to use the default microphone.
-            audio.clip = Microphone.Start(null, true, maxRecordingDuration, 22050);
+            audio.clip = Microphone.Start(null, true, maxRecordingDuration, samplingRate);
             audio.loop = true;
 
             // Wait until the microphone starts recording
@@ -255,24 +260,51 @@ public class SpeechManager : MonoBehaviour {
     void OnAudioFilterRead(float[] data, int channels)
     {
         //Debug.Log($"Received audio data of size: {data.Length} - First sample: {data[0]}");
-        Debug.Log($"Received audio data of size: {data.Length}");
+        Debug.Log($"Received audio data: {channels} channel(s), size {data.Length} samples.");
 
-        var audiodata = new byte[data.Length];
-
-        // Mute all the samples to avoid audio feedback into the microphone
-        for (int i = 0; i < data.Length; i++)
-        {
-            audiodata[i] = (byte)(int)(byte.MaxValue * data[i]);
-            data[i] = 0.0f;
-        }
         if (isRecording)
         {
+            byte[] audiodata = ConvertAudioClipDataToInt16ByteArray(data);
+            for (int i = 0; i < data.Length; i++)
+            {
+                // Mute all the samples to avoid audio feedback into the microphone
+                data[i] = 0.0f;
+            }
             recordingData.AddRange(audiodata);
             recordingSamples += audiodata.Length;
         }
         //recoServiceClient.SendAudioPacket(requestId, audiodata);
     }
 
+    /// <summary>
+    /// Converts audio data from Unity's array of floats to a WAV-compatible byte array.
+    /// Thanks to my colleague David Douglas for this method from his WavUtility class.
+    /// Source: https://github.com/deadlyfingers/UnityWav/blob/master/WavUtility.cs
+    /// </summary>
+    private static byte[] ConvertAudioClipDataToInt16ByteArray(float[] data)
+    {
+        MemoryStream dataStream = new MemoryStream();
+
+        int x = sizeof(Int16);
+        Int16 maxValue = Int16.MaxValue;
+        int i = 0;
+        while (i < data.Length)
+        {
+            dataStream.Write(BitConverter.GetBytes(Convert.ToInt16(data[i] * maxValue)), 0, x);
+            ++i;
+        }
+        byte[] bytes = dataStream.ToArray();
+
+        // Validate converted bytes
+        Debug.AssertFormat(data.Length * x == bytes.Length, "Unexpected float[] to Int16 to byte[] size: {0} == {1}", data.Length * x, bytes.Length);
+
+        dataStream.Dispose();
+        return bytes;
+    }
+
+    /// <summary>
+    /// Used only to record the microphone to a WAV file for testing purposes.
+    /// </summary>
     public void StartRecording()
     {
         Debug.Log("Initializing microphone for recording to audio file.");
@@ -290,18 +322,26 @@ public class SpeechManager : MonoBehaviour {
         Debug.Log("Microphone recording has started.");
     }
 
+    /// <summary>
+    /// Stops the microphone recording and saves to a WAV file. Used to validate WAV format.
+    /// </summary>
     public void StopRecording()
     {
         Debug.Log("Stopping microphone recording.");
         audio.Stop();
         Microphone.End(null);
         isRecording = false;
+        Debug.Log($"Microphone stopped recording at frequency {audio.clip.frequency}Hz.");
 
         var audioData = new byte[recordingData.Count];
         recordingData.CopyTo(audioData);
         WriteAudioDataToRiffWAVFile(audioData);
     }
 
+    /// <summary>
+    /// Saves a byte array of audio samples to a properly formatted WAV file.
+    /// </summary>
+    /// <param name="audiodata"></param>
     private void WriteAudioDataToRiffWAVFile(byte [] audiodata)
     {
         string filePath = Path.Combine(Application.temporaryCachePath, "recording.wav");
@@ -315,27 +355,25 @@ public class SpeechManager : MonoBehaviour {
         // Writing WAV header
         Debug.Log($"Writing WAV header to file with a count of {recordingSamples} samples.");
         wr.Write(System.Text.Encoding.UTF8.GetBytes("RIFF"), 0, 4);
-        wr.Write(BitConverter.GetBytes(36 + recordingSamples * numChannels * bytesPerSample), 0, 4);
+        // 36 is the total size of the header that follows. We don't count the RIFF line above (4) and this number (4).
+        // The data already takes the number of channels and bytes per sample since we converted from Unity data.
+        wr.Write(BitConverter.GetBytes(36 + recordingSamples), 0, 4); // * numChannels * bytesPerSample
         wr.Write(System.Text.Encoding.UTF8.GetBytes("WAVE"), 0, 4);
         wr.Write(System.Text.Encoding.UTF8.GetBytes("fmt "), 0, 4);  // Format chunk marker. Includes trailing null 
         wr.Write(BitConverter.GetBytes(samplingResolution), 0, 4);    // e.g. 16 bits
-        UInt16 two = 2;
-        UInt16 one = 1;
-        wr.Write(BitConverter.GetBytes(one), 0, 2);     // Type of format (1 is PCM) - 2 byte integer 
-        wr.Write(BitConverter.GetBytes(numChannels), 0, 2);
+        UInt16 audioFormat = 1;     // Type of format (1 is PCM) - 2 byte integer 
+        wr.Write(BitConverter.GetBytes(audioFormat), 0, 2);     
+        wr.Write(BitConverter.GetBytes(Convert.ToUInt16(numChannels)), 0, 2);
         wr.Write(BitConverter.GetBytes(samplingRate), 0, 4);
-        wr.Write(BitConverter.GetBytes(samplingRate * bytesPerSample * numChannels), 0, 4);   // byte rate
-        wr.Write(BitConverter.GetBytes(bytesPerSample * numChannels), 0, 2);    // block align
-        wr.Write(BitConverter.GetBytes(samplingResolution), 0, 2);
+        wr.Write(BitConverter.GetBytes(samplingRate * bytesPerSample  * numChannels), 0, 4);     // byte rate  
+        wr.Write(BitConverter.GetBytes(Convert.ToUInt16(bytesPerSample * numChannels)), 0, 2);  // block align
+        wr.Write(BitConverter.GetBytes(Convert.ToUInt16(samplingResolution)), 0, 2);            // bit depth
+        // Start of the data section
         wr.Write(System.Text.Encoding.UTF8.GetBytes("data"), 0, 4);  // "data" chunk header. Marks the beginning of the data section. 
-        wr.Write(BitConverter.GetBytes(recordingSamples * bytesPerSample * numChannels), 0, 4);  // Size of the data section. 
-
+        wr.Write(BitConverter.GetBytes(recordingSamples), 0, 4);  // Size of the data section. // * bytesPerSample
+        // Write the audio data to the main file body
         Debug.Log($"Writing {audiodata.Length} WAV data samples to file.");
-        for (int i = 0; i < audiodata.Length; i++)
-        {
-            //wr.Write(audiodata[i]);
-            wr.Write(BitConverter.GetBytes(0));
-        }
+        wr.Write(audiodata, 0, audiodata.Length);
 
         wr.Close();
         fs.Close();
