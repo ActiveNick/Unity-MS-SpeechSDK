@@ -35,6 +35,7 @@
 //
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.WebSockets;
@@ -119,8 +120,8 @@ namespace SpeechRecognitionService
                     byte[] headerHead;
                     for (int cursor = 0; cursor < audioFileInfo.Length; cursor++)
                     {
-                        headerBytes = BuildAudioHeader(requestId);
-                        headerHead = CreateAudioHeaderHead(headerBytes);
+                        headerBytes = BuildAudioPacketHeader(requestId);
+                        headerHead = BuildAudioPacketHeaderHead(headerBytes);
 
                         // PCM audio must be sampled at 16 kHz with 16 bits per sample and one channel (riff-16khz-16bit-mono-pcm).
                         var byteLen = 8192 - headerBytes.Length - 2;
@@ -169,7 +170,16 @@ namespace SpeechRecognitionService
             }
         }
 
-        public async Task<bool> CreateSpeechRecognitionJobFromVoice(string authenticationToken, string region)
+        /// <summary>
+        /// prepares a new speech recognition job, sending the proper headers including the audio data header
+        /// </summary>
+        /// <param name="authenticationToken"></param>
+        /// <param name="region"></param>
+        /// <param name="resolution"></param>
+        /// <param name="channels"></param>
+        /// <param name="rate"></param>
+        /// <returns></returns>
+        public async Task<bool> CreateSpeechRecognitionJobFromVoice(string authenticationToken, string region, int resolution, int channels, int rate)
         {
             try
             {
@@ -198,6 +208,15 @@ namespace SpeechRecognitionService
                     // into a series of audio chunks. Each chunk of audio carries a segment of the spoken audio that's
                     // to be transcribed by the service. The maximum size of a single audio chunk is 8,192 bytes.
                     // Audio stream messages are Binary WebSocket messages.
+                    // First we need to send an audio packet with the RIFF PCM (WAV) data header. Note that we don't know how
+                    // many samples we'll have since we are recording live, so we set nbsamples to zero.
+
+                    // The WebSocket Speech protocol docs state that PCM audio must be sampled at 16 kHz with 16 bits per sample
+                    // and one channel (riff-16khz-16bit-mono-pcm) but 48kHz-16-bit-stereo works too, more testing is required.
+                    var wavHeader = BuildRiffWAVHeader(0, resolution, channels, rate);
+                    SendAudioPacket(CurrentRequestId, wavHeader);
+                    Debug.Log($"First Audio data paket with WAV header sent successfully!");
+
                     Debug.Log($"WebSocket Client is now ready to receive audio packets from the microphone.");
 
                     state = JobState.ReadyForAudioPackets;
@@ -332,13 +351,11 @@ namespace SpeechRecognitionService
         {
             byte[] headerBytes;
             byte[] headerHead;
-            headerBytes = BuildAudioHeader(requestId);
-            headerHead = CreateAudioHeaderHead(headerBytes);
+            headerBytes = BuildAudioPacketHeader(requestId);
+            headerHead = BuildAudioPacketHeaderHead(headerBytes);
 
-            // PCM audio must be sampled at 16 kHz with 16 bits per sample and one channel (riff-16khz-16bit-mono-pcm).
-            //var fbuff = new byte[byteLen];
-            //audioFileStream.Read(fbuff, 0, byteLen);
-
+            // The WebSocket Speech protocol docs state that PCM audio must be sampled at 16 kHz with 16 bits per sample
+            // and one channel (riff-16khz-16bit-mono-pcm) but 48kHz-16-bit-stereo works too, more testing is required.
             var arr = headerHead.Concat(headerBytes).Concat(data).ToArray();
             var arrSeg = new ArraySegment<byte>(arr, 0, arr.Length);
 
@@ -362,8 +379,8 @@ namespace SpeechRecognitionService
         {
             byte[] headerBytes;
             byte[] headerHead;
-            headerBytes = BuildAudioHeader(requestId);
-            headerHead = CreateAudioHeaderHead(headerBytes);
+            headerBytes = BuildAudioPacketHeader(requestId);
+            headerHead = BuildAudioPacketHeaderHead(headerBytes);
             var arrEnd = headerHead.Concat(headerBytes).ToArray();
             await websocketClient.SendAsync(new ArraySegment<byte>(arrEnd, 0, arrEnd.Length), WebSocketMessageType.Binary, true, new CancellationToken());
         }
@@ -373,7 +390,7 @@ namespace SpeechRecognitionService
         /// </summary>
         /// <param name="requestid"></param>
         /// <returns></returns>
-        private byte[] BuildAudioHeader(string requestid)
+        private byte[] BuildAudioPacketHeader(string requestid)
         {
             StringBuilder speechMsgBuilder = new StringBuilder();
             // Clients use the audio message to send an audio chunk to the service.
@@ -385,7 +402,7 @@ namespace SpeechRecognitionService
             return Encoding.ASCII.GetBytes(speechMsgBuilder.ToString());
         }
 
-        private byte[] CreateAudioHeaderHead(byte[] headerBytes)
+        private byte[] BuildAudioPacketHeaderHead(byte[] headerBytes)
         {
             var headerbuffer = new ArraySegment<byte>(headerBytes, 0, headerBytes.Length);
             var str = "0x" + (headerBytes.Length).ToString("X");
@@ -393,6 +410,41 @@ namespace SpeechRecognitionService
             var isBigEndian = !BitConverter.IsLittleEndian;
             var headerHead = !isBigEndian ? new byte[] { headerHeadBytes[1], headerHeadBytes[0] } : new byte[] { headerHeadBytes[0], headerHeadBytes[1] };
             return headerHead;
+        }
+
+        /// <summary>
+        /// Builds properly formatted header data for RIFF PCM (WAV) audio data
+        /// </summary>
+        /// <param name="nbsamples">The number of audio samples that will be saved. 
+        ///             This value can be 0 when building a header for streaming data</param>
+        /// <param name="resolution">The resolution of the audio data (e.g. 8, 16, 24 bits)</param>
+        /// <param name="channels">The number of audio channels (e.g. 1 for mono, 2 for stereo, etc.)</param>
+        /// <param name="rate">The sampling rate of the audio data in Hz (e.g. 22050Hz, 44100Hz (CD quality), etc.)</param>
+        /// <returns></returns>
+        public byte[] BuildRiffWAVHeader(int nbsamples, int resolution, int channels, int rate)
+        {
+            List<byte> header = new List<byte>();
+
+            header.AddRange(System.Text.Encoding.UTF8.GetBytes("RIFF"));
+            // 36 is the total size of the header that follows. We don't count the RIFF line above (4) and this number (4).
+            // The data already takes the number of channels and bytes per sample since we converted from Unity data.
+            header.AddRange(BitConverter.GetBytes(36 + nbsamples)); // * numChannels * bytesPerSample
+            header.AddRange(System.Text.Encoding.UTF8.GetBytes("WAVE"));
+            header.AddRange(System.Text.Encoding.UTF8.GetBytes("fmt "));  // Format chunk marker. Includes trailing null 
+            header.AddRange(BitConverter.GetBytes(resolution));    // e.g. 16 bits
+            UInt16 audioFormat = 1;     // Type of format (1 is PCM) - 2 byte integer 
+            header.AddRange(BitConverter.GetBytes(audioFormat));
+            header.AddRange(BitConverter.GetBytes(Convert.ToUInt16(channels)));
+            header.AddRange(BitConverter.GetBytes(rate));
+            int bytesPerSample = resolution / 8;
+            header.AddRange(BitConverter.GetBytes(rate * bytesPerSample * channels));    // byte rate  
+            header.AddRange(BitConverter.GetBytes(Convert.ToUInt16(bytesPerSample * channels)));  // block align
+            header.AddRange(BitConverter.GetBytes(Convert.ToUInt16(resolution)));            // bit depth
+                                                                                             // Start of the data section
+            header.AddRange(System.Text.Encoding.UTF8.GetBytes("data"));  // "data" chunk header. Marks the beginning of the data section. 
+            header.AddRange(BitConverter.GetBytes(nbsamples));  // Size of the data section. // * bytesPerSample
+
+            return header.ToArray();
         }
 
         /// <summary>

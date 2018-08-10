@@ -56,7 +56,7 @@ public class SpeechManager : MonoBehaviour {
     // Private fields
     CogSvcSocketAuthentication auth;
     SpeechRecognitionClient recoServiceClient;
-    AudioSource audio;
+    AudioSource audiosource;
     bool isAuthenticated = false;
     bool isRecording = false;
     bool isRecognizing = false; 
@@ -73,7 +73,7 @@ public class SpeechManager : MonoBehaviour {
 
     // Use this for initialization
     void Start () {
-        audio = GetComponent<AudioSource>();
+        audiosource = GetComponent<AudioSource>();
         Debug.Log($"Audio settings playback rate currently set to {AudioSettings.outputSampleRate}Hz");
         // We need to make sure the microphone records at the same sampling rate as the audio
         // settings since we are using an audio filter to capture samples.
@@ -187,7 +187,7 @@ public class SpeechManager : MonoBehaviour {
     {
         Debug.Log($"Creating Speech Recognition job from microphone.");
 
-        Task<bool> recojob = recoServiceClient.CreateSpeechRecognitionJobFromVoice(auth.GetAccessToken(), region);
+        Task<bool> recojob = recoServiceClient.CreateSpeechRecognitionJobFromVoice(auth.GetAccessToken(), region, samplingResolution, numChannels, samplingRate);
 
         StartCoroutine(WaitUntilRecoServiceIsReady());
     }
@@ -210,13 +210,13 @@ public class SpeechManager : MonoBehaviour {
 
             Debug.Log("Initializing microphone for recording.");
             // Passing null for deviceName in Microphone methods to use the default microphone.
-            audio.clip = Microphone.Start(null, true, maxRecordingDuration, samplingRate);
-            audio.loop = true;
+            audiosource.clip = Microphone.Start(null, true, maxRecordingDuration, samplingRate);
+            audiosource.loop = true;
 
             // Wait until the microphone starts recording
             while (!(Microphone.GetPosition(null) > 0)) { };
             isRecognizing = true;
-            audio.Play();
+            audiosource.Play();
             Debug.Log("Microphone recording has started.");
         } 
         else
@@ -329,13 +329,13 @@ public class SpeechManager : MonoBehaviour {
         recordingSamples = 0;
 
         // Passing null for deviceName in Microphone methods to use the default microphone.
-        audio.clip = Microphone.Start(null, true, 1, samplingRate);
-        audio.loop = true;
+        audiosource.clip = Microphone.Start(null, true, 1, samplingRate);
+        audiosource.loop = true;
 
         // Wait until the microphone starts recording
         while (!(Microphone.GetPosition(null) > 0)) { };
         isRecording = true;
-        audio.Play();
+        audiosource.Play();
         Debug.Log("Microphone recording has started.");
     }
 
@@ -345,10 +345,10 @@ public class SpeechManager : MonoBehaviour {
     public void StopRecording()
     {
         Debug.Log("Stopping microphone recording.");
-        audio.Stop();
+        audiosource.Stop();
         Microphone.End(null);
         isRecording = false;
-        Debug.Log($"Microphone stopped recording at frequency {audio.clip.frequency}Hz.");
+        Debug.Log($"Microphone stopped recording at frequency {audiosource.clip.frequency}Hz.");
 
         var audioData = new byte[recordingData.Count];
         recordingData.CopyTo(audioData);
@@ -369,7 +369,7 @@ public class SpeechManager : MonoBehaviour {
 
         // Writing WAV header
         Debug.Log($"Writing WAV header to file with a count of {recordingSamples} samples.");
-        var header = BuildRiffWAVHeader(recordingSamples, samplingResolution, numChannels, samplingRate);
+        var header = recoServiceClient.BuildRiffWAVHeader(recordingSamples, samplingResolution, numChannels, samplingRate);
         wr.Write(header, 0, header.Length);
 
         // Write the audio data to the main file body
@@ -379,36 +379,5 @@ public class SpeechManager : MonoBehaviour {
         wr.Close();
         fs.Close();
         Debug.Log($"Completed writing {audiodata.Length} WAV data samples to file.");
-    }
-
-    /// <summary>
-    /// Builds properly formatted header data for RIFF PCM (WAV) audio data
-    /// </summary>
-    /// <param name="nbSamples">Can be 0 when building a header for streaming data</param>
-    /// <returns></returns>
-    public byte[] BuildRiffWAVHeader(int nbsamples, int resolution, int channels, int rate)
-    {
-        List<byte> header = new List<byte>();
-
-        header.AddRange(System.Text.Encoding.UTF8.GetBytes("RIFF"));
-        // 36 is the total size of the header that follows. We don't count the RIFF line above (4) and this number (4).
-        // The data already takes the number of channels and bytes per sample since we converted from Unity data.
-        header.AddRange(BitConverter.GetBytes(36 + nbsamples)); // * numChannels * bytesPerSample
-        header.AddRange(System.Text.Encoding.UTF8.GetBytes("WAVE"));
-        header.AddRange(System.Text.Encoding.UTF8.GetBytes("fmt "));  // Format chunk marker. Includes trailing null 
-        header.AddRange(BitConverter.GetBytes(resolution));    // e.g. 16 bits
-        UInt16 audioFormat = 1;     // Type of format (1 is PCM) - 2 byte integer 
-        header.AddRange(BitConverter.GetBytes(audioFormat));
-        header.AddRange(BitConverter.GetBytes(Convert.ToUInt16(channels)));
-        header.AddRange(BitConverter.GetBytes(rate));
-        int bytesPerSample = resolution / 8;
-        header.AddRange(BitConverter.GetBytes(rate * bytesPerSample * channels));    // byte rate  
-        header.AddRange(BitConverter.GetBytes(Convert.ToUInt16(bytesPerSample * channels)));  // block align
-        header.AddRange(BitConverter.GetBytes(Convert.ToUInt16(resolution)));            // bit depth
-        // Start of the data section
-        header.AddRange(System.Text.Encoding.UTF8.GetBytes("data"));  // "data" chunk header. Marks the beginning of the data section. 
-        header.AddRange(BitConverter.GetBytes(recordingSamples));  // Size of the data section. // * bytesPerSample
-
-        return header.ToArray();
     }
 }
