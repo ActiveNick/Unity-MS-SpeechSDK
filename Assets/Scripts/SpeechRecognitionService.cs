@@ -359,10 +359,10 @@ namespace SpeechRecognitionService
             var arr = headerHead.Concat(headerBytes).Concat(data).ToArray();
             var arrSeg = new ArraySegment<byte>(arr, 0, arr.Length);
 
-            Debug.Log($"Sending audio data sample from microphone.");
+            // Debug.Log($"Sending audio data sample from microphone.");
             if (SpeechWebSocketClient.State != WebSocketState.Open) return;
             SpeechWebSocketClient.SendAsync(arrSeg, WebSocketMessageType.Binary, true, new CancellationToken());
-            Debug.Log($"Audio data packet from microphone sent successfully!");
+            // Debug.Log($"Audio data packet from microphone sent successfully!");
 
             //var dt = Encoding.ASCII.GetString(arr);
 
