@@ -166,7 +166,8 @@ public class SpeechManager : MonoBehaviour {
     public void StartSpeechRecognitionFromFile()
     {
         // Replace this with your own file. Add it to the project and mark it as "Content" and "Copy if newer".
-        string audioFilePath = Path.Combine(Application.streamingAssetsPath, "Thisisatest.wav");
+        //string audioFilePath = Path.Combine(Application.streamingAssetsPath, "Thisisatest.wav");
+        string audioFilePath = Path.Combine(Application.temporaryCachePath, "recording.wav");
         Debug.Log($"Using speech audio file located at {audioFilePath}");
 
         Debug.Log($"Creating Speech Recognition job from audio file.");
@@ -335,16 +336,16 @@ public class SpeechManager : MonoBehaviour {
 
         var audioData = new byte[recordingData.Count];
         recordingData.CopyTo(audioData);
-        WriteAudioDataToRiffWAVFile(audioData);
+        WriteAudioDataToRiffWAVFile(audioData, "recording.wav");
     }
 
     /// <summary>
     /// Saves a byte array of audio samples to a properly formatted WAV file.
     /// </summary>
     /// <param name="audiodata"></param>
-    private void WriteAudioDataToRiffWAVFile(byte [] audiodata)
+    private void WriteAudioDataToRiffWAVFile(byte [] audiodata, string filename)
     {
-        string filePath = Path.Combine(Application.temporaryCachePath, "recording.wav");
+        string filePath = Path.Combine(Application.temporaryCachePath, filename);
         Debug.Log($"Opening new WAV file for recording: {filePath}");
 
         FileStream fs = new FileStream(filePath, FileMode.Create);
