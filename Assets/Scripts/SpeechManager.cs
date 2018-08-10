@@ -59,6 +59,7 @@ public class SpeechManager : MonoBehaviour {
     AudioSource audio;
     bool isAuthenticated = false;
     bool isRecording = false;
+    bool isRecognizing = false; 
     string requestId;
     int maxRecordingDuration = 10;  // in seconds
     string region;
@@ -185,11 +186,10 @@ public class SpeechManager : MonoBehaviour {
     public void StartSpeechRecognitionFromMicrophone()
     {
         Debug.Log($"Creating Speech Recognition job from microphone.");
-        // Temporarily disabling this feature until it's fixed with the new sampling method
 
-        //Task<bool> recojob = recoServiceClient.CreateSpeechRecognitionJobFromVoice(auth.GetAccessToken(), region);
+        Task<bool> recojob = recoServiceClient.CreateSpeechRecognitionJobFromVoice(auth.GetAccessToken(), region);
 
-        //StartCoroutine(WaitUntilRecoServiceIsReady());
+        StartCoroutine(WaitUntilRecoServiceIsReady());
     }
 
     /// <summary>
@@ -215,7 +215,7 @@ public class SpeechManager : MonoBehaviour {
 
             // Wait until the microphone starts recording
             while (!(Microphone.GetPosition(null) > 0)) { };
-            isRecording = true;
+            isRecognizing = true;
             audio.Play();
             Debug.Log("Microphone recording has started.");
         } 
@@ -258,12 +258,22 @@ public class SpeechManager : MonoBehaviour {
         }
     }
 
+    /// <summary>
+    /// OnAudioFilterRead is used to capture live microphone audio when recording or recognizing.
+    /// When OnAudioFilterRead is implemented, Unity inserts a custom filter into the audio DSP chain.
+    /// The filter is inserted in the same order as the MonoBehaviour script is shown in the inspector.
+    /// OnAudioFilterRead is called every time a chunk of audio is sent to the filter (this happens
+    /// frequently, every ~20ms depending on the sample rate and platform). 
+    /// </summary>
+    /// <param name="data">The audio data is an array of floats ranging from[-1.0f;1.0f]. Here it contains 
+    /// audio from AudioClip on the AudioSource, which itself receives data from the microphone.</param>
+    /// <param name="channels"></param>
     void OnAudioFilterRead(float[] data, int channels)
     {
         //Debug.Log($"Received audio data of size: {data.Length} - First sample: {data[0]}");
         Debug.Log($"Received audio data: {channels} channel(s), size {data.Length} samples.");
 
-        if (isRecording)
+        if (isRecording || isRecognizing)
         {
             byte[] audiodata = ConvertAudioClipDataToInt16ByteArray(data);
             for (int i = 0; i < data.Length; i++)
@@ -271,10 +281,16 @@ public class SpeechManager : MonoBehaviour {
                 // Mute all the samples to avoid audio feedback into the microphone
                 data[i] = 0.0f;
             }
-            recordingData.AddRange(audiodata);
-            recordingSamples += audiodata.Length;
+            if (isRecording) // We're only concerned with saving all audio data if we're persist to a file
+            {
+                recordingData.AddRange(audiodata);
+                recordingSamples += audiodata.Length;
+            }
+            else // if we're not recording, then we're in recognition mode
+            {
+                recoServiceClient.SendAudioPacket(requestId, audiodata);
+            }
         }
-        //recoServiceClient.SendAudioPacket(requestId, audiodata);
     }
 
     /// <summary>
@@ -343,7 +359,7 @@ public class SpeechManager : MonoBehaviour {
     /// Saves a byte array of audio samples to a properly formatted WAV file.
     /// </summary>
     /// <param name="audiodata"></param>
-    private void WriteAudioDataToRiffWAVFile(byte [] audiodata, string filename)
+    private void WriteAudioDataToRiffWAVFile(byte[] audiodata, string filename)
     {
         string filePath = Path.Combine(Application.temporaryCachePath, filename);
         Debug.Log($"Opening new WAV file for recording: {filePath}");
@@ -351,27 +367,11 @@ public class SpeechManager : MonoBehaviour {
         FileStream fs = new FileStream(filePath, FileMode.Create);
         BinaryWriter wr = new BinaryWriter(fs);
 
-        int bytesPerSample = samplingResolution / 8;
-
         // Writing WAV header
         Debug.Log($"Writing WAV header to file with a count of {recordingSamples} samples.");
-        wr.Write(System.Text.Encoding.UTF8.GetBytes("RIFF"), 0, 4);
-        // 36 is the total size of the header that follows. We don't count the RIFF line above (4) and this number (4).
-        // The data already takes the number of channels and bytes per sample since we converted from Unity data.
-        wr.Write(BitConverter.GetBytes(36 + recordingSamples), 0, 4); // * numChannels * bytesPerSample
-        wr.Write(System.Text.Encoding.UTF8.GetBytes("WAVE"), 0, 4);
-        wr.Write(System.Text.Encoding.UTF8.GetBytes("fmt "), 0, 4);  // Format chunk marker. Includes trailing null 
-        wr.Write(BitConverter.GetBytes(samplingResolution), 0, 4);    // e.g. 16 bits
-        UInt16 audioFormat = 1;     // Type of format (1 is PCM) - 2 byte integer 
-        wr.Write(BitConverter.GetBytes(audioFormat), 0, 2);     
-        wr.Write(BitConverter.GetBytes(Convert.ToUInt16(numChannels)), 0, 2);
-        wr.Write(BitConverter.GetBytes(samplingRate), 0, 4);
-        wr.Write(BitConverter.GetBytes(samplingRate * bytesPerSample  * numChannels), 0, 4);     // byte rate  
-        wr.Write(BitConverter.GetBytes(Convert.ToUInt16(bytesPerSample * numChannels)), 0, 2);  // block align
-        wr.Write(BitConverter.GetBytes(Convert.ToUInt16(samplingResolution)), 0, 2);            // bit depth
-        // Start of the data section
-        wr.Write(System.Text.Encoding.UTF8.GetBytes("data"), 0, 4);  // "data" chunk header. Marks the beginning of the data section. 
-        wr.Write(BitConverter.GetBytes(recordingSamples), 0, 4);  // Size of the data section. // * bytesPerSample
+        var header = BuildRiffWAVHeader(recordingSamples, samplingResolution, numChannels, samplingRate);
+        wr.Write(header, 0, header.Length);
+
         // Write the audio data to the main file body
         Debug.Log($"Writing {audiodata.Length} WAV data samples to file.");
         wr.Write(audiodata, 0, audiodata.Length);
@@ -379,5 +379,36 @@ public class SpeechManager : MonoBehaviour {
         wr.Close();
         fs.Close();
         Debug.Log($"Completed writing {audiodata.Length} WAV data samples to file.");
+    }
+
+    /// <summary>
+    /// Builds properly formatted header data for RIFF PCM (WAV) audio data
+    /// </summary>
+    /// <param name="nbSamples">Can be 0 when building a header for streaming data</param>
+    /// <returns></returns>
+    public byte[] BuildRiffWAVHeader(int nbsamples, int resolution, int channels, int rate)
+    {
+        List<byte> header = new List<byte>();
+
+        header.AddRange(System.Text.Encoding.UTF8.GetBytes("RIFF"));
+        // 36 is the total size of the header that follows. We don't count the RIFF line above (4) and this number (4).
+        // The data already takes the number of channels and bytes per sample since we converted from Unity data.
+        header.AddRange(BitConverter.GetBytes(36 + nbsamples)); // * numChannels * bytesPerSample
+        header.AddRange(System.Text.Encoding.UTF8.GetBytes("WAVE"));
+        header.AddRange(System.Text.Encoding.UTF8.GetBytes("fmt "));  // Format chunk marker. Includes trailing null 
+        header.AddRange(BitConverter.GetBytes(resolution));    // e.g. 16 bits
+        UInt16 audioFormat = 1;     // Type of format (1 is PCM) - 2 byte integer 
+        header.AddRange(BitConverter.GetBytes(audioFormat));
+        header.AddRange(BitConverter.GetBytes(Convert.ToUInt16(channels)));
+        header.AddRange(BitConverter.GetBytes(rate));
+        int bytesPerSample = resolution / 8;
+        header.AddRange(BitConverter.GetBytes(rate * bytesPerSample * channels));    // byte rate  
+        header.AddRange(BitConverter.GetBytes(Convert.ToUInt16(bytesPerSample * channels)));  // block align
+        header.AddRange(BitConverter.GetBytes(Convert.ToUInt16(resolution)));            // bit depth
+        // Start of the data section
+        header.AddRange(System.Text.Encoding.UTF8.GetBytes("data"));  // "data" chunk header. Marks the beginning of the data section. 
+        header.AddRange(BitConverter.GetBytes(recordingSamples));  // Size of the data section. // * bytesPerSample
+
+        return header.ToArray();
     }
 }
