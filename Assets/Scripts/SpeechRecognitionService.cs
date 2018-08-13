@@ -365,7 +365,6 @@ namespace SpeechRecognitionService
             Debug.Log($"Audio data packet from microphone sent successfully!");
 
             //var dt = Encoding.ASCII.GetString(arr);
-
         }
 
         /// <summary>
