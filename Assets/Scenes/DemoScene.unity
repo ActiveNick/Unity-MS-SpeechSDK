@@ -1204,6 +1204,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   DisplayLabel: {fileID: 1653449121}
+  SilenceThreshold: 0.002
+  SilenceTimeout: 3
 --- !u!82 &1676433671
 AudioSource:
   m_ObjectHideFlags: 0
