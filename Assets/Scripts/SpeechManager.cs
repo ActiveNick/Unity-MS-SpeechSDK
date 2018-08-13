@@ -82,6 +82,14 @@ public class SpeechManager : MonoBehaviour {
     int recordingSamples = 0;
     List<byte> recordingData;
 
+    /// <summary>
+    /// Called when speech has ended.
+    /// </summary>
+    /// <remarks>
+    /// This may come from client-side detection or server-side detection.
+    /// </remarks>
+    public event EventHandler SpeechEnded;
+
     // Use this for initialization
     void Start () {
         audiosource = GetComponent<AudioSource>();
@@ -177,16 +185,23 @@ public class SpeechManager : MonoBehaviour {
     /// </summary>
     public void StartSpeechRecognitionFromFile()
     {
-        // Replace this with your own file. Add it to the project and mark it as "Content" and "Copy if newer".
-        //string audioFilePath = Path.Combine(Application.streamingAssetsPath, "Thisisatest.wav");
-        string audioFilePath = Path.Combine(Application.temporaryCachePath, "recording.wav");
-        Debug.Log($"Using speech audio file located at {audioFilePath}");
+        if (isAuthenticated)
+        {
+            // Replace this with your own file. Add it to the project and mark it as "Content" and "Copy if newer".
+            //string audioFilePath = Path.Combine(Application.streamingAssetsPath, "Thisisatest.wav");
+            string audioFilePath = Path.Combine(Application.temporaryCachePath, "recording.wav");
+            Debug.Log($"Using speech audio file located at {audioFilePath}");
 
-        Debug.Log($"Creating Speech Recognition job from audio file.");
-        Task<bool> recojob = recoServiceClient.CreateSpeechRecognitionJobFromFile(audioFilePath, auth.GetAccessToken(), region);
+            Debug.Log($"Creating Speech Recognition job from audio file.");
+            Task<bool> recojob = recoServiceClient.CreateSpeechRecognitionJobFromFile(audioFilePath, auth.GetAccessToken(), region);
 
-        StartCoroutine(CompleteSpeechRecognitionJob(recojob));
-        Debug.Log($"Speech Recognition job started.");
+            StartCoroutine(CompleteSpeechRecognitionJob(recojob));
+            Debug.Log($"Speech Recognition job started.");
+        }
+        else
+        {
+            Debug.Log($"Cannot start speech recognition job since authentication has not successfully completed.");
+        }
     }
 
     /// <summary>
@@ -196,11 +211,18 @@ public class SpeechManager : MonoBehaviour {
     /// </summary>
     public void StartSpeechRecognitionFromMicrophone()
     {
-        Debug.Log($"Creating Speech Recognition job from microphone.");
+        if (isAuthenticated)
+        {
+            Debug.Log($"Creating Speech Recognition job from microphone.");
 
-        Task<bool> recojob = recoServiceClient.CreateSpeechRecognitionJobFromVoice(auth.GetAccessToken(), region, samplingResolution, numChannels, samplingRate);
+            Task<bool> recojob = recoServiceClient.CreateSpeechRecognitionJobFromVoice(auth.GetAccessToken(), region, samplingResolution, numChannels, samplingRate);
 
-        StartCoroutine(WaitUntilRecoServiceIsReady());
+            StartCoroutine(WaitUntilRecoServiceIsReady());
+        }
+        else
+        {
+            Debug.Log($"Cannot start speech recognition job since authentication has not successfully completed.");
+        }
     }
 
     /// <summary>
@@ -468,12 +490,4 @@ public class SpeechManager : MonoBehaviour {
         fs.Close();
         Debug.Log($"Completed writing {audiodata.Length} WAV data samples to file.");
     }
-
-	/// <summary>
-	/// Called when speech has ended.
-	/// </summary>
-	/// <remarks>
-	/// This may come from client-side detection or server-side detection.
-	/// </remarks>
-	public event EventHandler SpeechEnded;
 }
