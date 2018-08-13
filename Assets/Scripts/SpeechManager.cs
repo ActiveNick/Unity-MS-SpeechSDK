@@ -261,6 +261,11 @@ public class SpeechManager : MonoBehaviour {
         }
         else if (result.Path == SpeechServiceResult.SpeechMessagePaths.SpeechPhrase)
         {
+            if (isRecognizing)
+            {
+                StopRecording();
+            }
+
             DisplayLabel.text = result.Result.DisplayText;
             DisplayLabel.fontStyle = FontStyle.Normal;
 
@@ -282,9 +287,12 @@ public class SpeechManager : MonoBehaviour {
     void OnAudioFilterRead(float[] data, int channels)
     {
         //Debug.Log($"Received audio data of size: {data.Length} - First sample: {data[0]}");
+
         // Debug.Log($"Received audio data: {channels} channel(s), size {data.Length} samples.");
 
-		float maxAudio = 0f;
+    		float maxAudio = 0f;
+
+        //Debug.Log($"Received audio data: {channels} channel(s), size {data.Length} samples.");
 
         if (isRecording || isRecognizing)
         {
@@ -411,12 +419,16 @@ public class SpeechManager : MonoBehaviour {
         Debug.Log("Stopping microphone recording.");
         audiosource.Stop();
         Microphone.End(null);
-        isRecording = false;
         Debug.Log($"Microphone stopped recording at frequency {audiosource.clip.frequency}Hz.");
 
-        var audioData = new byte[recordingData.Count];
-        recordingData.CopyTo(audioData);
-        WriteAudioDataToRiffWAVFile(audioData, "recording.wav");
+        if (isRecording)
+        {
+            var audioData = new byte[recordingData.Count];
+            recordingData.CopyTo(audioData);
+            WriteAudioDataToRiffWAVFile(audioData, "recording.wav");
+        }
+        isRecording = false;
+        isRecognizing = false;
     }
 
 	/// <summary>
