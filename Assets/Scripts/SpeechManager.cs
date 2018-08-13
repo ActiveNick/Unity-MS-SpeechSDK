@@ -53,16 +53,27 @@ public class SpeechManager : MonoBehaviour {
     // Public fields
     public Text DisplayLabel;
 
+	[Tooltip("The amplitude under which the sound will be considered silent.")]
+	[Range(0.0f, 0.1f)]
+	public float SilenceThreshold = 0.002f;
+
+	[Tooltip("The duration of silence, in seconds, for the end of speech to be detected.")]
+	[Range(1.0f, 10f)]
+	public float SilenceTimeout = 3.0f;
+
     // Private fields
     CogSvcSocketAuthentication auth;
     SpeechRecognitionClient recoServiceClient;
     AudioSource audiosource;
     bool isAuthenticated = false;
     bool isRecording = false;
-    bool isRecognizing = false; 
+    bool isRecognizing = false;
+	bool isSilent = false;
     string requestId;
     int maxRecordingDuration = 10;  // in seconds
     string region;
+	bool silenceNotified = false;
+	long silenceStarted = 0;
 
     // Microphone Recording Parameters
     int numChannels = 2;
@@ -276,6 +287,11 @@ public class SpeechManager : MonoBehaviour {
     void OnAudioFilterRead(float[] data, int channels)
     {
         //Debug.Log($"Received audio data of size: {data.Length} - First sample: {data[0]}");
+
+        // Debug.Log($"Received audio data: {channels} channel(s), size {data.Length} samples.");
+
+    		float maxAudio = 0f;
+
         //Debug.Log($"Received audio data: {channels} channel(s), size {data.Length} samples.");
 
         if (isRecording || isRecognizing)
@@ -283,9 +299,60 @@ public class SpeechManager : MonoBehaviour {
             byte[] audiodata = ConvertAudioClipDataToInt16ByteArray(data);
             for (int i = 0; i < data.Length; i++)
             {
+				// Get the max amplitude out of the sample
+				maxAudio = Mathf.Max(maxAudio, Mathf.Abs(data[i]));
+
                 // Mute all the samples to avoid audio feedback into the microphone
                 data[i] = 0.0f;
             }
+
+			// Was THIS sample silent?
+			bool silentThisSample = (maxAudio <= SilenceThreshold);
+			if (silentThisSample)
+			{
+				// Yes this sample was silent.
+				// If we haven't been in silence yet, notify that we're entering silence
+				if (!isSilent)
+				{
+					Debug.Log($"Silence Starting... ({maxAudio})");
+					isSilent = true;
+					silenceStarted = DateTime.Now.Ticks; // Must use ticks since Unity's Time class can't be used on this thread.
+					silenceNotified = false;
+				}
+				else
+				{
+					// Looks like we've been in silence for a while.
+					// If we haven't already notified of a timeout, check to see if a timeout has occurred.
+					if (!silenceNotified)
+					{
+						// Have we crossed the silence threshold
+						TimeSpan duration = TimeSpan.FromTicks(DateTime.Now.Ticks - silenceStarted);
+						if (duration.TotalSeconds >= SilenceTimeout)
+						{
+							Debug.Log("Silence Timeout");
+
+							// Mark notified
+							silenceNotified = true;
+
+							// Notify
+							OnSpeechEnded();
+						}
+					}
+				}
+			}
+			else 
+			{
+				// No this sample was not silent. 
+				// Check to see if we're leaving silence.
+				if (isSilent)
+				{
+					Debug.Log($"Silence Ended ({maxAudio})");
+
+					// No longer silent
+					isSilent = false;
+				}
+			}
+
             if (isRecording) // We're only concerned with saving all audio data if we're persist to a file
             {
                 recordingData.AddRange(audiodata);
@@ -364,6 +431,18 @@ public class SpeechManager : MonoBehaviour {
         isRecognizing = false;
     }
 
+	/// <summary>
+	/// Called when speech has ended.
+	/// </summary>
+	/// <remarks>
+	/// This may come from client-side detection or server-side detection.
+	/// </remarks>
+	protected virtual void OnSpeechEnded()
+	{
+		Debug.Log("Speech Ended");
+		if (SpeechEnded != null) { SpeechEnded(this, EventArgs.Empty); }
+	}
+
     /// <summary>
     /// Saves a byte array of audio samples to a properly formatted WAV file.
     /// </summary>
@@ -389,4 +468,12 @@ public class SpeechManager : MonoBehaviour {
         fs.Close();
         Debug.Log($"Completed writing {audiodata.Length} WAV data samples to file.");
     }
+
+	/// <summary>
+	/// Called when speech has ended.
+	/// </summary>
+	/// <remarks>
+	/// This may come from client-side detection or server-side detection.
+	/// </remarks>
+	public event EventHandler SpeechEnded;
 }
