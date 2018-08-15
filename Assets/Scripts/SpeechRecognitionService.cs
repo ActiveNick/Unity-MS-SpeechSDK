@@ -66,6 +66,7 @@ namespace SpeechRecognitionService
         // Private fields
         bool useClassicBingSpeechService = false;
         private JobState state;
+        private string lineSeparator;
 
         // Events Definition
         public delegate void MessageReceived(SpeechServiceResult result);
@@ -73,6 +74,8 @@ namespace SpeechRecognitionService
 
         public SpeechRecognitionClient(bool usebingspeechservice = false)
         {
+            lineSeparator = "\r\n"; // Environment.NewLine;
+
             state = JobState.Initializing;
             // Set usebingspeechservice to true in  the client constructor if you want to use the old Bing Speech SDK
             // instead of the new Speech Service.
@@ -138,7 +141,7 @@ namespace SpeechRecognitionService
                         await SpeechWebSocketClient.SendAsync(arrSeg, WebSocketMessageType.Binary, true, new CancellationToken());
                         Debug.Log($"Audio data from file {audioFilePath} sent successfully!");
 
-                        //var dt = Encoding.ASCII.GetString(arr);
+                        //var dt = Encoding.UTF8.GetString(arr);
                     }
                     await SendEmptyAudioMessageToWebSocketClient(SpeechWebSocketClient, requestId);
                     audioFileStream.Dispose();
@@ -165,7 +168,7 @@ namespace SpeechRecognitionService
             {
                 state = JobState.Error;
                 Debug.Log($"An exception occurred during creation of Speech Recognition job from audio file {audioFilePath}:" 
-                    + Environment.NewLine + ex.Message);
+                    + lineSeparator + ex.Message);
                 return false;
             }
         }
@@ -241,7 +244,7 @@ namespace SpeechRecognitionService
             catch (Exception ex)
             {
                 Debug.Log($"An exception occurred during creation of Speech Recognition job from microphone:" 
-                    + Environment.NewLine + ex.Message);
+                    + lineSeparator + ex.Message);
                 return false;
             }
         }
@@ -293,7 +296,7 @@ namespace SpeechRecognitionService
         /// </summary>
         /// <param name="requestId"></param>
         /// <returns></returns>
-        private static ArraySegment<byte> CreateSpeechConfigMessagePayloadBuffer(string requestId)
+        private ArraySegment<byte> CreateSpeechConfigMessagePayloadBuffer(string requestId)
         {
             dynamic SpeechConfigPayload = CreateSpeechConfigPayload();
 
@@ -302,11 +305,11 @@ namespace SpeechRecognitionService
 
             // Create speech.config message from required headers and JSON payload
             StringBuilder speechMsgBuilder = new StringBuilder();
-            speechMsgBuilder.Append("path:speech.config" + Environment.NewLine);
-            speechMsgBuilder.Append("x-requestid:" + requestId + Environment.NewLine);
-            speechMsgBuilder.Append($"x-timestamp:{DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffK")}" + Environment.NewLine);
-            speechMsgBuilder.Append($"content-type:application/json; charset=utf-8" + Environment.NewLine);
-            speechMsgBuilder.Append(Environment.NewLine);
+            speechMsgBuilder.Append("path:speech.config" + lineSeparator);
+            speechMsgBuilder.Append("x-requestid:" + requestId + lineSeparator);
+            speechMsgBuilder.Append($"x-timestamp:{DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffK")}" + lineSeparator);
+            speechMsgBuilder.Append($"content-type:application/json; charset=utf-8" + lineSeparator);
+            speechMsgBuilder.Append(lineSeparator);
             speechMsgBuilder.Append(SpeechConfigPayloadJson);
             var strh = speechMsgBuilder.ToString();
 
@@ -364,7 +367,7 @@ namespace SpeechRecognitionService
             SpeechWebSocketClient.SendAsync(arrSeg, WebSocketMessageType.Binary, true, new CancellationToken());
             // Debug.Log($"Audio data packet from microphone sent successfully!");
 
-            //var dt = Encoding.ASCII.GetString(arr);
+            //var dt = Encoding.UTF8.GetString(arr);
         }
 
         /// <summary>
@@ -393,12 +396,12 @@ namespace SpeechRecognitionService
         {
             StringBuilder speechMsgBuilder = new StringBuilder();
             // Clients use the audio message to send an audio chunk to the service.
-            speechMsgBuilder.Append("path:audio" + Environment.NewLine);
-            speechMsgBuilder.Append($"x-requestid:{requestid}" + Environment.NewLine);
-            speechMsgBuilder.Append($"x-timestamp:{DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffK")}" + Environment.NewLine);
-            speechMsgBuilder.Append($"content-type:audio/x-wav" + Environment.NewLine);
+            speechMsgBuilder.Append("path:audio" + lineSeparator);
+            speechMsgBuilder.Append($"x-requestid:{requestid}" + lineSeparator);
+            speechMsgBuilder.Append($"x-timestamp:{DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffK")}" + lineSeparator);
+            speechMsgBuilder.Append($"content-type:audio/x-wav" + lineSeparator + lineSeparator);
 
-            return Encoding.ASCII.GetBytes(speechMsgBuilder.ToString());
+            return Encoding.UTF8.GetBytes(speechMsgBuilder.ToString());
         }
 
         private byte[] BuildAudioPacketHeaderHead(byte[] headerBytes)
@@ -470,7 +473,7 @@ namespace SpeechRecognitionService
                         // phrase, which is a recognition result that won't change.
                         case WebSocketMessageType.Text:
                             wssr = ParseWebSocketSpeechResult(resStr);
-                            Debug.Log(resStr + Environment.NewLine + "*** Message End ***" + Environment.NewLine);
+                            Debug.Log(resStr + lineSeparator + "*** Message End ***" + lineSeparator);
 
                             // Set the recognized text field in the client for future lookup, this can be stored
                             // in either the Text property (for hypotheses) or DisplayText (for final phrases).
@@ -511,7 +514,7 @@ namespace SpeechRecognitionService
             }
             catch (Exception ex)
             {
-                Debug.Log("An exception occurred while receiving a message:" + Environment.NewLine + ex.Message);
+                Debug.Log("An exception occurred while receiving a message:" + lineSeparator + ex.Message);
             }
         }
         public static UInt16 ReverseBytes(UInt16 value)
@@ -519,7 +522,7 @@ namespace SpeechRecognitionService
             return (UInt16)((value & 0xFFU) << 8 | (value & 0xFF00U) >> 8);
         }
 
-        static SpeechServiceResult ParseWebSocketSpeechResult(string result)
+        SpeechServiceResult ParseWebSocketSpeechResult(string result)
         {
             SpeechServiceResult wssr = new SpeechServiceResult();
 
@@ -602,12 +605,12 @@ namespace SpeechRecognitionService
                                     if (line.Substring(0, 1) == "{")
                                     {
                                         isBodyStarted = true;
-                                        bodyJSON += line + Environment.NewLine;
+                                        bodyJSON += line + lineSeparator;
                                     }
                                 }
                                 else
                                 {
-                                    bodyJSON += line + Environment.NewLine;
+                                    bodyJSON += line + lineSeparator;
                                 }
                                 break;
                         } 
