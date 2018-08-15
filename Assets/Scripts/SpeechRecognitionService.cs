@@ -138,7 +138,7 @@ namespace SpeechRecognitionService
                         await SpeechWebSocketClient.SendAsync(arrSeg, WebSocketMessageType.Binary, true, new CancellationToken());
                         Debug.Log($"Audio data from file {audioFilePath} sent successfully!");
 
-                        var dt = Encoding.ASCII.GetString(arr);
+                        //var dt = Encoding.ASCII.GetString(arr);
                     }
                     await SendEmptyAudioMessageToWebSocketClient(SpeechWebSocketClient, requestId);
                     audioFileStream.Dispose();
@@ -396,7 +396,7 @@ namespace SpeechRecognitionService
             speechMsgBuilder.Append("path:audio" + Environment.NewLine);
             speechMsgBuilder.Append($"x-requestid:{requestid}" + Environment.NewLine);
             speechMsgBuilder.Append($"x-timestamp:{DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffK")}" + Environment.NewLine);
-            speechMsgBuilder.Append($"content-type:audio/x-wav");
+            speechMsgBuilder.Append($"content-type:audio/x-wav" + Environment.NewLine);
 
             return Encoding.ASCII.GetBytes(speechMsgBuilder.ToString());
         }

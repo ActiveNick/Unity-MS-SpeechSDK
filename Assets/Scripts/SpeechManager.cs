@@ -53,6 +53,9 @@ public class SpeechManager : MonoBehaviour {
     // Public fields
     public Text DisplayLabel;
 
+    [Tooltip("Whether or not the Speech Manager should trigger the end of dictation through the use of silence detection, which is confirgurable via the the Silence Treshold and Silence Timeout settings below. Service-side silence detection is enabled by default.")]
+    public bool UseClientSideSilenceDetection = false;
+
 	[Tooltip("The amplitude under which the sound will be considered silent.")]
 	[Range(0.0f, 0.1f)]
 	public float SilenceThreshold = 0.002f;
@@ -92,6 +95,9 @@ public class SpeechManager : MonoBehaviour {
 
     // Use this for initialization
     void Start () {
+        // Make sure to comment the following line unless you're debugging
+        //Debug.LogError("This message will make the console appear in Development Builds");
+
         audiosource = GetComponent<AudioSource>();
         Debug.Log($"Audio settings playback rate currently set to {AudioSettings.outputSampleRate}Hz");
         // We need to make sure the microphone records at the same sampling rate as the audio
@@ -312,7 +318,7 @@ public class SpeechManager : MonoBehaviour {
 
         // Debug.Log($"Received audio data: {channels} channel(s), size {data.Length} samples.");
 
-    		float maxAudio = 0f;
+        float maxAudio = 0f;
 
         //Debug.Log($"Received audio data: {channels} channel(s), size {data.Length} samples.");
 
@@ -321,60 +327,66 @@ public class SpeechManager : MonoBehaviour {
             byte[] audiodata = ConvertAudioClipDataToInt16ByteArray(data);
             for (int i = 0; i < data.Length; i++)
             {
-				// Get the max amplitude out of the sample
-				maxAudio = Mathf.Max(maxAudio, Mathf.Abs(data[i]));
+                if (UseClientSideSilenceDetection)
+                {
+                    // Get the max amplitude out of the sample
+                    maxAudio = Mathf.Max(maxAudio, Mathf.Abs(data[i]));
+                }
 
                 // Mute all the samples to avoid audio feedback into the microphone
                 data[i] = 0.0f;
             }
 
-			// Was THIS sample silent?
-			bool silentThisSample = (maxAudio <= SilenceThreshold);
-			if (silentThisSample)
-			{
-				// Yes this sample was silent.
-				// If we haven't been in silence yet, notify that we're entering silence
-				if (!isSilent)
-				{
-					Debug.Log($"Silence Starting... ({maxAudio})");
-					isSilent = true;
-					silenceStarted = DateTime.Now.Ticks; // Must use ticks since Unity's Time class can't be used on this thread.
-					silenceNotified = false;
-				}
-				else
-				{
-					// Looks like we've been in silence for a while.
-					// If we haven't already notified of a timeout, check to see if a timeout has occurred.
-					if (!silenceNotified)
-					{
-						// Have we crossed the silence threshold
-						TimeSpan duration = TimeSpan.FromTicks(DateTime.Now.Ticks - silenceStarted);
-						if (duration.TotalSeconds >= SilenceTimeout)
-						{
-							Debug.Log("Silence Timeout");
+            if (UseClientSideSilenceDetection)
+            {
+                // Was THIS sample silent?
+                bool silentThisSample = (maxAudio <= SilenceThreshold);
+                if (silentThisSample)
+                {
+                    // Yes this sample was silent.
+                    // If we haven't been in silence yet, notify that we're entering silence
+                    if (!isSilent)
+                    {
+                        Debug.Log($"Silence Starting... ({maxAudio})");
+                        isSilent = true;
+                        silenceStarted = DateTime.Now.Ticks; // Must use ticks since Unity's Time class can't be used on this thread.
+                        silenceNotified = false;
+                    }
+                    else
+                    {
+                        // Looks like we've been in silence for a while.
+                        // If we haven't already notified of a timeout, check to see if a timeout has occurred.
+                        if (!silenceNotified)
+                        {
+                            // Have we crossed the silence threshold
+                            TimeSpan duration = TimeSpan.FromTicks(DateTime.Now.Ticks - silenceStarted);
+                            if (duration.TotalSeconds >= SilenceTimeout)
+                            {
+                                Debug.Log("Silence Timeout");
 
-							// Mark notified
-							silenceNotified = true;
+                                // Mark notified
+                                silenceNotified = true;
 
-							// Notify
-							OnSpeechEnded();
-						}
-					}
-				}
-			}
-			else 
-			{
-				// No this sample was not silent. 
-				// Check to see if we're leaving silence.
-				if (isSilent)
-				{
-					Debug.Log($"Silence Ended ({maxAudio})");
+                                // Notify
+                                OnSpeechEnded();
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // No this sample was not silent. 
+                    // Check to see if we're leaving silence.
+                    if (isSilent)
+                    {
+                        Debug.Log($"Silence Ended ({maxAudio})");
 
-					// No longer silent
-					isSilent = false;
-				}
-			}
+                        // No longer silent
+                        isSilent = false;
+                    }
+                }
 
+            }
             if (isRecording) // We're only concerned with saving all audio data if we're persist to a file
             {
                 recordingData.AddRange(audiodata);
