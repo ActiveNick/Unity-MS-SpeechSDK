@@ -3,7 +3,7 @@ Sample Unity project used to demonstrate Speech Recognition (aka Speech-to-Text)
 
 * **Unity version:** 2018.2.2f1
 * **Speech Service version:** 0.5.0 (Preview)
-* **Target platforms tested:** Unity Editor/Mono (*to be tested*: Windows Desktop, UWP/WMR, Android, iOS)
+* **Target platforms tested:** Unity Editor/Mono, Windows Desktop x64, Android (*to be tested*: UWP/WMR, iOS)
 
 ## Implementation Notes
 * This sample uses the [Speech Service WebSocket protocol](https://docs.microsoft.com/en-us/azure/cognitive-services/speech/api-reference-rest/websocketprotocol) to interact with the Speech Service and generate speech recognition hypotheses in real-time.
