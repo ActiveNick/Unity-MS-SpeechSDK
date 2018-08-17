@@ -38,12 +38,18 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using UnityEngine;
+// .NET and UWP have different namespaces, classes and APIs for WebSockets
+#if WINDOWS_UWP
+using Windows.Networking.Sockets;
+using Windows.Storage.Streams;
+#else
+using System.Net.WebSockets;
+#endif
 
 namespace SpeechRecognitionService
 {
@@ -56,7 +62,11 @@ namespace SpeechRecognitionService
         // Public Fields
         public string RecognizedText { get; set; }
         public SpeechServiceResult LastMessageReceived { get; set; }
+#if WINDOWS_UWP
+        public MessageWebSocket SpeechWebSocketClient { get; set; }
+#else
         public ClientWebSocket SpeechWebSocketClient { get; set; }
+#endif
         public string CurrentRequestId { get; set; }
         public JobState State
         {
@@ -89,23 +99,22 @@ namespace SpeechRecognitionService
             try
             {
                 state = JobState.PreparingJob;
-
                 SpeechWebSocketClient = await InitializeSpeechWebSocketClient(authenticationToken, region);
 
-                var receiving = Receiving(SpeechWebSocketClient);
-
+#if !WINDOWS_UWP
+                Task receiving = Receiving(SpeechWebSocketClient);
+#endif
                 var sending = Task.Run(async () =>
                 {
                     // Create a unique request ID, must be a UUID in "no-dash" format
                     var requestId = Guid.NewGuid().ToString("N");
-
                     ArraySegment<byte> buffer = CreateSpeechConfigMessagePayloadBuffer(requestId);
 
-                    if (SpeechWebSocketClient.State != WebSocketState.Open) return;
-
+                    if (!IsWebSocketClientOpen(SpeechWebSocketClient)) return;
                     Debug.Log("Sending speech.config...");
                     // Send speech.config to Speech Service
-                    await SpeechWebSocketClient.SendAsync(buffer, WebSocketMessageType.Text, true, new CancellationToken());
+                    await SendToWebSocket(SpeechWebSocketClient, buffer, false);
+                    //await SpeechWebSocketClient.SendAsync(buffer, WebSocketMessageType.Text, true, new CancellationToken());
                     Debug.Log("speech.config sent successfully!");
 
                     // SENDING AUDIO TO SPEECH SERVICE:
@@ -135,10 +144,11 @@ namespace SpeechRecognitionService
                         var arrSeg = new ArraySegment<byte>(arr, 0, arr.Length);
 
                         Debug.Log($"Sending audio data from position: {cursor}");
-                        if (SpeechWebSocketClient.State != WebSocketState.Open) return;
+                        if (!IsWebSocketClientOpen(SpeechWebSocketClient)) return;
                         cursor += byteLen;
                         var end = cursor >= audioFileInfo.Length;
-                        await SpeechWebSocketClient.SendAsync(arrSeg, WebSocketMessageType.Binary, true, new CancellationToken());
+                        //await SpeechWebSocketClient.SendAsync(arrSeg, WebSocketMessageType.Binary, true, new CancellationToken());
+                        await SendToWebSocket(SpeechWebSocketClient, arrSeg, true);
                         Debug.Log($"Audio data from file {audioFilePath} sent successfully!");
 
                         //var dt = Encoding.UTF8.GetString(arr);
@@ -147,18 +157,20 @@ namespace SpeechRecognitionService
                     audioFileStream.Dispose();
                 });
 
+#if WINDOWS_UWP
+                await Task.WhenAll(sending);
+#else
                 // Wait for tasks to complete
                 await Task.WhenAll(sending, receiving);
-                if (sending.IsFaulted)
-                {
-                    state = JobState.Error;
-                    var err = sending.Exception;
-                    throw err;
-                }
                 if (receiving.IsFaulted)
                 {
-                    state = JobState.Error;
                     var err = receiving.Exception;
+                    throw err;
+                }
+#endif
+                if (sending.IsFaulted)
+                {
+                    var err = sending.Exception;
                     throw err;
                 }
 
@@ -187,23 +199,23 @@ namespace SpeechRecognitionService
             try
             {
                 state = JobState.PreparingJob;
-
                 SpeechWebSocketClient = await InitializeSpeechWebSocketClient(authenticationToken, region);
 
-                var receiving = Receiving(SpeechWebSocketClient);
-
+#if !WINDOWS_UWP
+                Task receiving = Receiving(SpeechWebSocketClient);
+#endif
                 var sending = Task.Run(async () =>
                 {
                     // Create a unique request ID, must be a UUID in "no-dash" format
                     CurrentRequestId = Guid.NewGuid().ToString("N");
-
                     ArraySegment<byte> buffer = CreateSpeechConfigMessagePayloadBuffer(CurrentRequestId);
 
-                    if (SpeechWebSocketClient.State != WebSocketState.Open) return;
+                    if (!IsWebSocketClientOpen(SpeechWebSocketClient)) return;
 
                     Debug.Log("Sending speech.config...");
                     // Send speech.config to Speech Service
-                    await SpeechWebSocketClient.SendAsync(buffer, WebSocketMessageType.Text, true, new CancellationToken());
+                    await SendToWebSocket(SpeechWebSocketClient, buffer, false);
+                    //await SpeechWebSocketClient.SendAsync(buffer, WebSocketMessageType.Text, true, new CancellationToken());
                     Debug.Log("speech.config sent successfully!");
 
                     // SENDING AUDIO TO SPEECH SERVICE:
@@ -217,27 +229,29 @@ namespace SpeechRecognitionService
                     // The WebSocket Speech protocol docs state that PCM audio must be sampled at 16 kHz with 16 bits per sample
                     // and one channel (riff-16khz-16bit-mono-pcm) but 48kHz-16-bit-stereo works too, more testing is required.
                     var wavHeader = BuildRiffWAVHeader(0, resolution, channels, rate);
-                    SendAudioPacket(CurrentRequestId, wavHeader);
+                    await SendAudioPacket(CurrentRequestId, wavHeader);
                     Debug.Log($"First Audio data paket with WAV header sent successfully!");
 
                     Debug.Log($"WebSocket Client is now ready to receive audio packets from the microphone.");
-
                     state = JobState.ReadyForAudioPackets;
                 });
 
+#if WINDOWS_UWP
+                await Task.WhenAll(sending);
+#else
                 // Wait for tasks to complete
                 await Task.WhenAll(sending, receiving);
-                if (sending.IsFaulted)
-                {
-                    var err = sending.Exception;
-                    throw err;
-                }
                 if (receiving.IsFaulted)
                 {
                     var err = receiving.Exception;
                     throw err;
                 }
-
+#endif
+                if (sending.IsFaulted)
+                {
+                    var err = sending.Exception;
+                    throw err;
+                }
 
                 return true;
             }
@@ -249,6 +263,138 @@ namespace SpeechRecognitionService
             }
         }
 
+#if WINDOWS_UWP
+        /// <summary>
+        /// Prepares the WebSocket Client with the proper header and Uri for the Speech Service.
+        /// </summary>
+        /// <param name="authenticationToken"></param>
+        /// <param name="region"></param>
+        /// <returns></returns>
+        private async Task<MessageWebSocket> InitializeSpeechWebSocketClient(string authenticationToken, string region)
+        {
+            // Configuring Speech Service Web Socket client header
+            Debug.Log("Connecting to Speech Service via Web Socket.");
+            MessageWebSocket websocketClient = new MessageWebSocket();
+
+            string connectionId = Guid.NewGuid().ToString("N");
+
+            // Make sure to change the region & culture to match your recorded audio file.
+            string lang = "en-US";
+            websocketClient.SetRequestHeader("X-ConnectionId", connectionId);
+            websocketClient.SetRequestHeader("Authorization", "Bearer " + authenticationToken);
+
+            // Clients must use an appropriate endpoint of Speech Service. The endpoint is based on recognition mode and language.
+            // The supported recognition modes are:
+            //  - interactive
+            //  - conversation
+            //  - dictation
+            var url = "";
+            if (!useClassicBingSpeechService)
+            {
+                // New Speech Service endpoint. 
+                url = $"wss://{region}.stt.speech.microsoft.com/speech/recognition/interactive/cognitiveservices/v1?format=simple&language={lang}";
+            }
+            else
+            {
+                // Bing Speech endpoint
+                url = $"wss://speech.platform.bing.com/speech/recognition/interactive/cognitiveservices/v1?format=simple&language={lang}";
+            }
+
+            websocketClient.MessageReceived += WebSocket_MessageReceived;
+            websocketClient.Closed += WebSocket_Closed;
+
+            await websocketClient.ConnectAsync(new Uri(url));
+            Debug.Log("Web Socket successfully connected.");
+
+            return websocketClient;
+        }
+
+        private async Task SendToWebSocket(MessageWebSocket client, ArraySegment<byte> buffer, bool isBinary)
+        {
+            client.Control.MessageType = (isBinary ? SocketMessageType.Binary : SocketMessageType.Utf8);
+            using (var dataWriter = new DataWriter(client.OutputStream))
+            {
+                dataWriter.WriteBytes(buffer.Array);
+                await dataWriter.StoreAsync();
+                dataWriter.DetachStream();
+            }
+        }
+
+        private bool IsWebSocketClientOpen(MessageWebSocket client)
+        {
+            return (client != null);
+        }
+
+        private void WebSocket_MessageReceived(MessageWebSocket sender, MessageWebSocketMessageReceivedEventArgs args)
+        {
+            try
+            {
+                SpeechServiceResult wssr;
+                using (DataReader dataReader = args.GetDataReader())
+                {
+                    dataReader.UnicodeEncoding = Windows.Storage.Streams.UnicodeEncoding.Utf8;
+                    string resStr = dataReader.ReadString(dataReader.UnconsumedBufferLength);
+                    Debug.Log("Message received from MessageWebSocket: " + resStr);
+                    //this.messageWebSocket.Dispose();
+
+                    switch (args.MessageType)
+                    {
+                        // Incoming text messages can be hypotheses about the words the service recognized or the final
+                        // phrase, which is a recognition result that won't change.
+                        case SocketMessageType.Utf8:
+                            wssr = ParseWebSocketSpeechResult(resStr);
+                            Debug.Log(resStr + Environment.NewLine + "*** Message End ***" + Environment.NewLine);
+
+                            // Set the recognized text field in the client for future lookup, this can be stored
+                            // in either the Text property (for hypotheses) or DisplayText (for final phrases).
+                            if (wssr.Path == SpeechServiceResult.SpeechMessagePaths.SpeechHypothesis)
+                            {
+                                RecognizedText = wssr.Result.Text;
+                            }
+                            else if (wssr.Path == SpeechServiceResult.SpeechMessagePaths.SpeechPhrase)
+                            {
+                                RecognizedText = wssr.Result.DisplayText;
+                            }
+                            // Raise an event with the message we just received.
+                            // We also keep the last message received in case the client app didn't subscribe to the event.
+                            LastMessageReceived = wssr;
+                            if (OnMessageReceived != null)
+                            {
+                                OnMessageReceived.Invoke(wssr);
+                            }
+                            break;
+
+                        case SocketMessageType.Binary:
+                            Debug.Log("Binary messages are not suppported by this application.");
+                            break;
+
+                        //case WebSocketMessageType.Close:
+                        //    string description = client.CloseStatusDescription;
+                        //    Debug.Log($"Closing WebSocket with Status: {description}");
+                        //    await client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "", CancellationToken.None);
+                        //    isReceiving = false;
+                        //    break;
+
+                        default:
+                            Debug.Log("The WebSocket message type was not recognized.");
+                            break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                //Windows.Web.WebErrorStatus webErrorStatus = WebSocketError.GetStatus(ex.GetBaseException().HResult);
+                Debug.Log("An exception occurred while receiving a message:" + Environment.NewLine + ex.Message);
+                // Add additional code here to handle exceptions.
+            }
+        }
+
+        private void WebSocket_Closed(Windows.Networking.Sockets.IWebSocket sender, Windows.Networking.Sockets.WebSocketClosedEventArgs args)
+        {
+            Debug.Log($"Closing WebSocket: Code: {args.Code}, Reason: {args.Reason}");
+            // Add additional code here to handle the WebSocket being closed.
+        }
+#else
         /// <summary>
         /// Prepares the WebSocket Client with the proper header and Uri for the Speech Service.
         /// </summary>
@@ -290,6 +436,84 @@ namespace SpeechRecognitionService
 
             return websocketClient;
         }
+
+        private async Task SendToWebSocket(ClientWebSocket client, ArraySegment<byte> buffer, bool isBinary)
+        {
+            if (client.State != WebSocketState.Open) return;
+            await client.SendAsync(buffer, (isBinary ? WebSocketMessageType.Binary : WebSocketMessageType.Text), true, new CancellationToken());
+        }
+
+        private bool IsWebSocketClientOpen(ClientWebSocket client)
+        {
+            return (client.State == WebSocketState.Open);
+        }
+
+        // Allows the WebSocket client to receive messages in a background task
+        private async Task Receiving(ClientWebSocket client)
+        {
+            try
+            {
+                var buffer = new byte[512];
+                bool isReceiving = true;
+
+                while (isReceiving)
+                {
+                    var wsResult = await client.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+
+                    SpeechServiceResult wssr;
+
+                    var resStr = Encoding.UTF8.GetString(buffer, 0, wsResult.Count);
+
+                    switch (wsResult.MessageType)
+                    {
+                        // Incoming text messages can be hypotheses about the words the service recognized or the final
+                        // phrase, which is a recognition result that won't change.
+                        case WebSocketMessageType.Text:
+                            wssr = ParseWebSocketSpeechResult(resStr);
+                            Debug.Log(resStr + Environment.NewLine + "*** Message End ***" + Environment.NewLine);
+
+                            // Set the recognized text field in the client for future lookup, this can be stored
+                            // in either the Text property (for hypotheses) or DisplayText (for final phrases).
+                            if (wssr.Path == SpeechServiceResult.SpeechMessagePaths.SpeechHypothesis)
+                            {
+                                RecognizedText = wssr.Result.Text;
+                            }
+                            else if (wssr.Path == SpeechServiceResult.SpeechMessagePaths.SpeechPhrase)
+                            {
+                                RecognizedText = wssr.Result.DisplayText;
+                            }
+                            // Raise an event with the message we just received.
+                            // We also keep the last message received in case the client app didn't subscribe to the event.
+                            LastMessageReceived = wssr;
+                            if (OnMessageReceived != null)
+                            {
+                                OnMessageReceived.Invoke(wssr);
+                            }
+                            break;
+
+                        case WebSocketMessageType.Binary:
+                            Debug.Log("Binary messages are not suppported by this application.");
+                            break;
+
+                        case WebSocketMessageType.Close:
+                            string description = client.CloseStatusDescription;
+                            Debug.Log($"Closing WebSocket with Status: {description}");
+                            await client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "", CancellationToken.None);
+                            isReceiving = false;
+                            break;
+
+                        default:
+                            Debug.Log("The message type was not recognized.");
+                            break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Log("An exception occurred while receiving a message:" + Environment.NewLine + ex.Message);
+            }
+        }
+#endif
 
         /// <summary>
         /// Prepares the payload (with headers) for the very first config message to be sent over WebSocket.
@@ -350,7 +574,7 @@ namespace SpeechRecognitionService
             };
         }
 
-        public void SendAudioPacket(string requestId, byte[] data)
+        public async Task SendAudioPacket(string requestId, byte[] data)
         {
             byte[] headerBytes;
             byte[] headerHead;
@@ -363,8 +587,9 @@ namespace SpeechRecognitionService
             var arrSeg = new ArraySegment<byte>(arr, 0, arr.Length);
 
             // Debug.Log($"Sending audio data sample from microphone.");
-            if (SpeechWebSocketClient.State != WebSocketState.Open) return;
-            SpeechWebSocketClient.SendAsync(arrSeg, WebSocketMessageType.Binary, true, new CancellationToken());
+            if (!IsWebSocketClientOpen(SpeechWebSocketClient)) return;
+            await SendToWebSocket(SpeechWebSocketClient, arrSeg, true);
+            //SpeechWebSocketClient.SendAsync(arrSeg, WebSocketMessageType.Binary, true, new CancellationToken());
             // Debug.Log($"Audio data packet from microphone sent successfully!");
 
             //var dt = Encoding.UTF8.GetString(arr);
@@ -377,14 +602,19 @@ namespace SpeechRecognitionService
         /// <param name="websocketClient"></param>
         /// <param name="requestId"></param>
         /// <returns></returns>
+#if WINDOWS_UWP
+        private async Task SendEmptyAudioMessageToWebSocketClient(MessageWebSocket websocketClient, string requestId)
+#else
         private async Task SendEmptyAudioMessageToWebSocketClient(ClientWebSocket websocketClient, string requestId)
+#endif
         {
             byte[] headerBytes;
             byte[] headerHead;
             headerBytes = BuildAudioPacketHeader(requestId);
             headerHead = BuildAudioPacketHeaderHead(headerBytes);
             var arrEnd = headerHead.Concat(headerBytes).ToArray();
-            await websocketClient.SendAsync(new ArraySegment<byte>(arrEnd, 0, arrEnd.Length), WebSocketMessageType.Binary, true, new CancellationToken());
+            await SendToWebSocket(websocketClient, new ArraySegment<byte>(arrEnd, 0, arrEnd.Length), true);
+            //await websocketClient.SendAsync(new ArraySegment<byte>(arrEnd, 0, arrEnd.Length), WebSocketMessageType.Binary, true, new CancellationToken());
         }
 
         /// <summary>
@@ -449,74 +679,75 @@ namespace SpeechRecognitionService
             return header.ToArray();
         }
 
-        /// <summary>
-        /// Allows the WebSocket client to receive messages in a background task.
-        /// </summary>
-        private async Task Receiving(ClientWebSocket client)
-        {
-            try
-            {
-                var buffer = new byte[512];
-                bool isReceiving = true;
+        ///// <summary>
+        ///// Allows the WebSocket client to receive messages in a background task.
+        ///// </summary>
+        //private async Task Receiving(ClientWebSocket client)
+        //{
+        //    try
+        //    {
+        //        var buffer = new byte[512];
+        //        bool isReceiving = true;
 
-                while (isReceiving)
-                {
+        //        while (isReceiving)
+        //        {
 
-                    var wsResult = await client.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-                    SpeechServiceResult wssr;
+        //            var wsResult = await client.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+        //            SpeechServiceResult wssr;
 
-                    var resStr = Encoding.UTF8.GetString(buffer, 0, wsResult.Count);
+        //            var resStr = Encoding.UTF8.GetString(buffer, 0, wsResult.Count);
 
-                    switch (wsResult.MessageType)
-                    {
-                        // Incoming text messages can be hypotheses about the words the service recognized or the final
-                        // phrase, which is a recognition result that won't change.
-                        case WebSocketMessageType.Text:
-                            wssr = ParseWebSocketSpeechResult(resStr);
-                            Debug.Log(resStr + lineSeparator + "*** Message End ***" + lineSeparator);
+        //            switch (wsResult.MessageType)
+        //            {
+        //                // Incoming text messages can be hypotheses about the words the service recognized or the final
+        //                // phrase, which is a recognition result that won't change.
+        //                case WebSocketMessageType.Text:
+        //                    wssr = ParseWebSocketSpeechResult(resStr);
+        //                    Debug.Log(resStr + lineSeparator + "*** Message End ***" + lineSeparator);
 
-                            // Set the recognized text field in the client for future lookup, this can be stored
-                            // in either the Text property (for hypotheses) or DisplayText (for final phrases).
-                            if (wssr.Path == SpeechServiceResult.SpeechMessagePaths.SpeechHypothesis)
-                            {
-                                RecognizedText = wssr.Result.Text;
-                            }
-                            else if(wssr.Path == SpeechServiceResult.SpeechMessagePaths.SpeechPhrase)
-                            {
-                                RecognizedText = wssr.Result.DisplayText;
-                                state = JobState.Completed;
-                            }
-                            // Raise an event with the message we just received.
-                            // We also keep the last message received in case the client app didn't subscribe to the event.
-                            LastMessageReceived = wssr;
-                            if (OnMessageReceived != null)
-                            {
-                                OnMessageReceived.Invoke(wssr);
-                            }
-                            break;
+        //                    // Set the recognized text field in the client for future lookup, this can be stored
+        //                    // in either the Text property (for hypotheses) or DisplayText (for final phrases).
+        //                    if (wssr.Path == SpeechServiceResult.SpeechMessagePaths.SpeechHypothesis)
+        //                    {
+        //                        RecognizedText = wssr.Result.Text;
+        //                    }
+        //                    else if(wssr.Path == SpeechServiceResult.SpeechMessagePaths.SpeechPhrase)
+        //                    {
+        //                        RecognizedText = wssr.Result.DisplayText;
+        //                        state = JobState.Completed;
+        //                    }
+        //                    // Raise an event with the message we just received.
+        //                    // We also keep the last message received in case the client app didn't subscribe to the event.
+        //                    LastMessageReceived = wssr;
+        //                    if (OnMessageReceived != null)
+        //                    {
+        //                        OnMessageReceived.Invoke(wssr);
+        //                    }
+        //                    break;
 
-                        case WebSocketMessageType.Binary:
-                            Debug.Log("Binary messages are not suppported by this application.");
-                            break;
+        //                case WebSocketMessageType.Binary:
+        //                    Debug.Log("Binary messages are not suppported by this application.");
+        //                    break;
 
-                        case WebSocketMessageType.Close:
-                            string description = client.CloseStatusDescription;
-                            Debug.Log($"Closing WebSocket with Status: {description}");
-                            await client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "", CancellationToken.None);
-                            isReceiving = false;
-                            break;
+        //                case WebSocketMessageType.Close:
+        //                    string description = client.CloseStatusDescription;
+        //                    Debug.Log($"Closing WebSocket with Status: {description}");
+        //                    await client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "", CancellationToken.None);
+        //                    isReceiving = false;
+        //                    break;
 
-                        default:
-                            Debug.Log("The message type was not recognized.");
-                            break;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.Log("An exception occurred while receiving a message:" + lineSeparator + ex.Message);
-            }
-        }
+        //                default:
+        //                    Debug.Log("The message type was not recognized.");
+        //                    break;
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Debug.Log("An exception occurred while receiving a message:" + lineSeparator + ex.Message);
+        //    }
+        //}
+
         public static UInt16 ReverseBytes(UInt16 value)
         {
             return (UInt16)((value & 0xFFU) << 8 | (value & 0xFF00U) >> 8);

@@ -128,7 +128,9 @@ namespace SpeechRecognitionService
                 UriBuilder uriBuilder = new UriBuilder(fetchUri);
                 uriBuilder.Path += "/issueToken";
 
-                var result = await client.PostAsync(uriBuilder.Uri.AbsoluteUri, null);
+                // Using ConfigureAwait(false) to configures the awaiter used to await this Task to prevent 
+                // the attempt to marshal the continuation back to the original context captured.
+                var result = await client.PostAsync(uriBuilder.Uri.AbsoluteUri, null).ConfigureAwait(false);
                 Debug.Log("Token Uri: " + uriBuilder.Uri.AbsoluteUri);
                 return await result.Content.ReadAsStringAsync();
             }

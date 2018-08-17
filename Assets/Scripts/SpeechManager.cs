@@ -131,7 +131,7 @@ public class SpeechManager : MonoBehaviour {
 #if USENEWSPEECHSDK
         bool useClassicBingSpeechService = false;
         //string authenticationKey = @"INSERT-YOUR-NEW-SPEECH-API-KEY-HERE";
-        string authenticationKey = @"f69d77d425e946e69a954c53db135f77";
+        string authenticationKey = @"895664ef53e44b6fac574c3ecd6f3b75";
 #else
         bool useClassicBingSpeechService = true;
         //string authenticationKey = @"INSERT-YOUR-BING-SPEECH-API-KEY-HERE";
@@ -498,8 +498,8 @@ public class SpeechManager : MonoBehaviour {
         Debug.Log($"Writing {audiodata.Length} WAV data samples to file.");
         wr.Write(audiodata, 0, audiodata.Length);
 
-        wr.Close();
-        fs.Close();
+        wr.Dispose();
+        fs.Dispose();
         Debug.Log($"Completed writing {audiodata.Length} WAV data samples to file.");
     }
 }
