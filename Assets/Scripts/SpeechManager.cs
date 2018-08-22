@@ -196,6 +196,12 @@ public class SpeechManager : MonoBehaviour {
             // Replace this with your own file. Add it to the project and mark it as "Content" and "Copy if newer".
             //string audioFilePath = Path.Combine(Application.streamingAssetsPath, "Thisisatest.wav");
             string audioFilePath = Path.Combine(Application.temporaryCachePath, "recording.wav");
+
+            if (!File.Exists(audioFilePath)) {
+                UpdateUICanvasLabel("The file 'recording.wav' was not found. make sure to record one before starting recognition.", FontStyle.Normal);
+                return;
+            }
+
             Debug.Log($"Using speech audio file located at {audioFilePath}");
 
             Debug.Log($"Creating Speech Recognition job from audio file.");
