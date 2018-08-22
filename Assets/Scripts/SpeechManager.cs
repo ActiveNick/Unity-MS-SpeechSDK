@@ -257,6 +257,7 @@ public class SpeechManager : MonoBehaviour {
             isRecognizing = true;
             audiosource.Play();
             Debug.Log("Microphone recording has started.");
+            UpdateUICanvasLabel("Microphone is live, start talking now...", FontStyle.Normal);
         } 
         else
         {
@@ -284,8 +285,8 @@ public class SpeechManager : MonoBehaviour {
     {
         if (result.Path == SpeechServiceResult.SpeechMessagePaths.SpeechHypothesis)
         {
-            DisplayLabel.text = result.Result.Text;
-            DisplayLabel.fontStyle = FontStyle.Italic;
+
+            UpdateUICanvasLabel(result.Result.Text, FontStyle.Italic, true);
         }
         else if (result.Path == SpeechServiceResult.SpeechMessagePaths.SpeechPhrase)
         {
@@ -294,13 +295,38 @@ public class SpeechManager : MonoBehaviour {
                 StopRecording();
             }
 
-            DisplayLabel.text = result.Result.DisplayText;
-            DisplayLabel.fontStyle = FontStyle.Normal;
+            UpdateUICanvasLabel(result.Result.DisplayText, FontStyle.Normal, true);
 
             Debug.Log("* RECOGNITION STATUS: " + result.Result.RecognitionStatus);
             Debug.Log("* FINAL RESULT: " + result.Result.DisplayText);
         }
     }
+
+#if WINDOWS_UWP
+
+    private void UpdateUICanvasLabel(string text, FontStyle style, bool forceToMainThread = false)
+    {
+        if (forceToMainThread)
+        {
+            UnityEngine.WSA.Application.InvokeOnAppThread(() =>
+            {
+                DisplayLabel.text = text;
+                DisplayLabel.fontStyle = style;
+
+            }, false);
+        } else
+        {
+            DisplayLabel.text = text;
+            DisplayLabel.fontStyle = style;
+        }
+    }
+#else
+    private void UpdateUICanvasLabel(string text, FontStyle style, bool forceToMainThread = false)
+    {
+        DisplayLabel.text = text;
+        DisplayLabel.fontStyle = style;
+    }
+#endif
 
     /// <summary>
     /// OnAudioFilterRead is used to capture live microphone audio when recording or recognizing.
@@ -443,6 +469,7 @@ public class SpeechManager : MonoBehaviour {
         isRecording = true;
         audiosource.Play();
         Debug.Log("Microphone recording has started.");
+        UpdateUICanvasLabel("Microphone is live, start talking now... press STOP when done.", FontStyle.Normal);
     }
 
     /// <summary>
@@ -451,18 +478,37 @@ public class SpeechManager : MonoBehaviour {
     public void StopRecording()
     {
         Debug.Log("Stopping microphone recording.");
+
+#if WINDOWS_UWP
+        UnityEngine.WSA.Application.InvokeOnAppThread(() =>
+        {
+            audiosource.Stop();
+            Microphone.End(null);
+            if (isRecording)
+            {
+                var audioData = new byte[recordingData.Count];
+                recordingData.CopyTo(audioData);
+                WriteAudioDataToRiffWAVFile(audioData, "recording.wav");
+                isRecording = false;
+                isRecognizing = false;
+            }
+            Debug.Log($"Microphone stopped recording at frequency {audiosource.clip.frequency}Hz.");
+
+        }, false);
+#else
         audiosource.Stop();
         Microphone.End(null);
-        Debug.Log($"Microphone stopped recording at frequency {audiosource.clip.frequency}Hz.");
-
         if (isRecording)
         {
             var audioData = new byte[recordingData.Count];
             recordingData.CopyTo(audioData);
             WriteAudioDataToRiffWAVFile(audioData, "recording.wav");
+            isRecording = false;
+            isRecognizing = false;
+            Debug.Log($"Microphone stopped recording at frequency {audiosource.clip.frequency}Hz.");
         }
-        isRecording = false;
-        isRecognizing = false;
+#endif
+        UpdateUICanvasLabel("Recording stopped. Audio saved to file 'recording.wav'.", FontStyle.Normal, true);
     }
 
 	/// <summary>

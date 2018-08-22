@@ -1154,7 +1154,9 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Recognized text goes here.
+  m_Text: 'Start a speech recognition job from a recorded file
+
+    or start one directly from the microphone.'
 --- !u!222 &1653449122
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1204,6 +1206,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   DisplayLabel: {fileID: 1653449121}
+  UseClientSideSilenceDetection: 0
   SilenceThreshold: 0.002
   SilenceTimeout: 3
 --- !u!82 &1676433671
