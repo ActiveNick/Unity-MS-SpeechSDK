@@ -86,17 +86,17 @@ public class SpeechManager : MonoBehaviour {
     List<byte> recordingData;
 
     /// <summary>
-    /// Called when speech has ended.
+    /// This event is called when speech has ended.
     /// </summary>
     /// <remarks>
-    /// This may come from client-side detection or server-side detection.
+    /// This may come from client-side (optional) or service-side (always on) silence detection.
     /// </remarks>
     public event EventHandler SpeechEnded;
 
     // Use this for initialization
     void Start () {
         // Make sure to comment the following line unless you're debugging
-        //Debug.LogError("This message will make the console appear in Development Builds");
+        //Debug.LogError("This message should make the console appear in Development Builds");
 
         audiosource = GetComponent<AudioSource>();
         Debug.Log($"Audio settings playback rate currently set to {AudioSettings.outputSampleRate}Hz");
@@ -105,7 +105,6 @@ public class SpeechManager : MonoBehaviour {
         samplingRate = AudioSettings.outputSampleRate;
 
         Debug.Log($"Initiating Cognitive Services Speech Recognition Service.");
-        
         InitializeSpeechRecognitionService();
     }
 
@@ -115,7 +114,9 @@ public class SpeechManager : MonoBehaviour {
 	}
 
     /// <summary>
-    /// InitializeSpeechRecognitionService
+    /// InitializeSpeechRecognitionService is used to authenticate the client app
+    /// with the Speech API Cognitive Services. A subscription key is passed to 
+    /// obtain a token, which is then used in the header of every APi call.
     /// </summary>
     private void InitializeSpeechRecognitionService()
     {
@@ -174,14 +175,23 @@ public class SpeechManager : MonoBehaviour {
 
         try
         {
-            isAuthenticated = true;
-            Debug.Log($"Authentication token obtained: {auth.GetAccessToken()}");
+            if (auth.GetAccessToken() != null && auth.GetAccessToken().Length > 0)
+            {
+                isAuthenticated = true;
+                Debug.Log($"Authentication token obtained: {auth.GetAccessToken()}");
+            } else
+            {
+                string msg = "Cognitive Services authentication failed. Please check your subscription key and try again.";
+                Debug.Log(msg);
+                UpdateUICanvasLabel(msg, FontStyle.Normal, false);
+            }
         }
         catch (Exception ex)
         {
-            Debug.Log("Failed authentication.");
-            Debug.Log(ex.ToString());
-            Debug.Log(ex.Message);
+            string msg = String.Format("Cognitive Services authentication failed. Please check your subscription key and try again. See error details below:{0}{1}{2}{3}",
+                            Environment.NewLine, ex.ToString(), Environment.NewLine, ex.Message);
+            Debug.Log(msg);
+            UpdateUICanvasLabel(msg, FontStyle.Normal, false);
         }
     }
 
@@ -212,7 +222,9 @@ public class SpeechManager : MonoBehaviour {
         }
         else
         {
-            Debug.Log($"Cannot start speech recognition job since authentication has not successfully completed.");
+            string msg = "Cannot start speech recognition job since authentication has not successfully completed.";
+            Debug.Log(msg);
+            UpdateUICanvasLabel(msg, FontStyle.Normal, false);
         }
     }
 
@@ -226,14 +238,15 @@ public class SpeechManager : MonoBehaviour {
         if (isAuthenticated)
         {
             Debug.Log($"Creating Speech Recognition job from microphone.");
-
             Task<bool> recojob = recoServiceClient.CreateSpeechRecognitionJobFromVoice(auth.GetAccessToken(), region, samplingResolution, numChannels, samplingRate);
 
             StartCoroutine(WaitUntilRecoServiceIsReady());
         }
         else
         {
-            Debug.Log($"Cannot start speech recognition job since authentication has not successfully completed.");
+            string msg = "Cannot start speech recognition job since authentication has not successfully completed.";
+            Debug.Log(msg);
+            UpdateUICanvasLabel(msg, FontStyle.Normal, false);
         }
     }
 
