@@ -1,9 +1,11 @@
 # Unity-MS-SpeechSDK
 Sample Unity project used to demonstrate Speech Recognition (aka Speech-to-Text) using the new [Microsoft Speech Service](https://docs.microsoft.com/en-us/azure/cognitive-services/Speech-Service/) (currently in Preview) via WebSockets. The Microsoft Speech Service is part of [Microsoft Azure Cognitive Services](https://www.microsoft.com/cognitive-services). **This is a work in progress**. 
 
-* **Unity version:** 2018.2.4f1
+* **Unity version:** 2018.2.5f1
 * **Speech Service version:** 0.6.0 (Preview)
 * **Target platforms tested:** Unity Editor/Mono, Windows Desktop x64, Android, UWP (*to be tested*: iOS)
+
+![Screenshot](Screenshots/SpeechRecoExample01.gif)
 
 ## Implementation Notes
 * This sample uses the [Speech Service WebSocket protocol](https://docs.microsoft.com/en-us/azure/cognitive-services/speech/api-reference-rest/websocketprotocol) to interact with the Speech Service and generate speech recognition hypotheses in real-time.
