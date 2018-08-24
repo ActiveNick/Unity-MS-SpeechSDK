@@ -81,7 +81,7 @@ namespace SpeechRecognitionService
             }
             catch (Exception ex)
             {
-                Debug.Log("An exception occurred during authentication:" + Environment.NewLine + ex.Message);
+                Debug.Log($"An exception occurred during authentication:{Environment.NewLine}{ex.Message}");
                 return null;
             }
         }
@@ -94,7 +94,7 @@ namespace SpeechRecognitionService
         private async void RenewAccessToken()
         {
             this.token = await FetchToken(AuthenticationUri, this.subscriptionKey);
-            Debug.Log("Renewed authentication token: {this.token}");
+            Debug.Log($"Renewed authentication token: {this.token}");
         }
 
         private void OnTokenExpiredCallback(object stateInfo)
@@ -105,7 +105,7 @@ namespace SpeechRecognitionService
             }
             catch (Exception ex)
             {
-                Debug.Log(string.Format("Failed renewing access token. Details: {0}", ex.Message));
+                Debug.Log($"Failed renewing access token. Details: {ex.Message}");
             }
             finally
             {
@@ -115,7 +115,7 @@ namespace SpeechRecognitionService
                 }
                 catch (Exception ex)
                 {
-                    Debug.Log(string.Format("Failed to reschedule the timer to renew access token. Details: {0}", ex.Message));
+                    Debug.Log($"Failed to reschedule the timer to renew access token. Details: {ex.Message}");
                 }
             }
         }
