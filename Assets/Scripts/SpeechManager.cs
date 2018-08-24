@@ -534,7 +534,7 @@ public class SpeechManager : MonoBehaviour {
 	/// Called when speech has ended.
 	/// </summary>
 	/// <remarks>
-	/// This may come from client-side detection or server-side detection.
+	/// This may come from client-side or service-side silence detection.
 	/// </remarks>
 	protected virtual void OnSpeechEnded()
 	{
