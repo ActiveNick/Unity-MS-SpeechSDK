@@ -183,7 +183,7 @@ public class SpeechManager : MonoBehaviour {
             {
                 string msg = "Cognitive Services authentication failed. Please check your subscription key and try again.";
                 Debug.Log(msg);
-                UpdateUICanvasLabel(msg, FontStyle.Normal, false);
+                UpdateUICanvasLabel(msg, FontStyle.Normal);
             }
         }
         catch (Exception ex)
@@ -191,7 +191,7 @@ public class SpeechManager : MonoBehaviour {
             string msg = String.Format("Cognitive Services authentication failed. Please check your subscription key and try again. See error details below:{0}{1}{2}{3}",
                             Environment.NewLine, ex.ToString(), Environment.NewLine, ex.Message);
             Debug.Log(msg);
-            UpdateUICanvasLabel(msg, FontStyle.Normal, false);
+            UpdateUICanvasLabel(msg, FontStyle.Normal);
         }
     }
 
@@ -224,7 +224,7 @@ public class SpeechManager : MonoBehaviour {
         {
             string msg = "Cannot start speech recognition job since authentication has not successfully completed.";
             Debug.Log(msg);
-            UpdateUICanvasLabel(msg, FontStyle.Normal, false);
+            UpdateUICanvasLabel(msg, FontStyle.Normal);
         }
     }
 
@@ -246,7 +246,7 @@ public class SpeechManager : MonoBehaviour {
         {
             string msg = "Cannot start speech recognition job since authentication has not successfully completed.";
             Debug.Log(msg);
-            UpdateUICanvasLabel(msg, FontStyle.Normal, false);
+            UpdateUICanvasLabel(msg, FontStyle.Normal);
         }
     }
 
@@ -305,7 +305,7 @@ public class SpeechManager : MonoBehaviour {
         if (result.Path == SpeechServiceResult.SpeechMessagePaths.SpeechHypothesis)
         {
 
-            UpdateUICanvasLabel(result.Result.Text, FontStyle.Italic, true);
+            UpdateUICanvasLabel(result.Result.Text, FontStyle.Italic);
         }
         else if (result.Path == SpeechServiceResult.SpeechMessagePaths.SpeechPhrase)
         {
@@ -314,7 +314,7 @@ public class SpeechManager : MonoBehaviour {
                 StopRecording();
             }
 
-            UpdateUICanvasLabel(result.Result.DisplayText, FontStyle.Normal, true);
+            UpdateUICanvasLabel(result.Result.DisplayText, FontStyle.Normal);
 
             Debug.Log("* RECOGNITION STATUS: " + result.Result.RecognitionStatus);
             Debug.Log("* FINAL RESULT: " + result.Result.DisplayText);
@@ -323,9 +323,9 @@ public class SpeechManager : MonoBehaviour {
 
 #if WINDOWS_UWP
 
-    private void UpdateUICanvasLabel(string text, FontStyle style, bool forceToMainThread = false)
+    private void UpdateUICanvasLabel(string text, FontStyle style)
     {
-        if (forceToMainThread)
+        if (!UnityEngine.WSA.Application.RunningOnAppThread())
         {
             UnityEngine.WSA.Application.InvokeOnAppThread(() =>
             {
@@ -339,9 +339,13 @@ public class SpeechManager : MonoBehaviour {
             DisplayLabel.fontStyle = style;
         }
     }
+//#elif UNITY_IOS
+
+    
 #else
-    private void UpdateUICanvasLabel(string text, FontStyle style, bool forceToMainThread = false)
+    private void UpdateUICanvasLabel(string text, FontStyle style)
     {
+        
         DisplayLabel.text = text;
         DisplayLabel.fontStyle = style;
     }
@@ -527,7 +531,7 @@ public class SpeechManager : MonoBehaviour {
             Debug.Log($"Microphone stopped recording at frequency {audiosource.clip.frequency}Hz.");
         }
 #endif
-        UpdateUICanvasLabel("Recording stopped. Audio saved to file 'recording.wav'.", FontStyle.Normal, true);
+        UpdateUICanvasLabel("Recording stopped. Audio saved to file 'recording.wav'.", FontStyle.Normal);
     }
 
 	/// <summary>
