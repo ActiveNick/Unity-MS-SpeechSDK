@@ -360,7 +360,7 @@ namespace SpeechRecognitionService
                             LastMessageReceived = wssr;
                             if (OnMessageReceived != null)
                             {
-                                OnMessageReceived.Invoke(wssr);
+                                OnMessageReceived?.Invoke(wssr);
                             }
                             break;
 
@@ -487,7 +487,7 @@ namespace SpeechRecognitionService
                             LastMessageReceived = wssr;
                             if (OnMessageReceived != null)
                             {
-                                OnMessageReceived.Invoke(wssr);
+                                OnMessageReceived?.Invoke(wssr);
                             }
                             break;
 
@@ -678,75 +678,6 @@ namespace SpeechRecognitionService
 
             return header.ToArray();
         }
-
-        ///// <summary>
-        ///// Allows the WebSocket client to receive messages in a background task.
-        ///// </summary>
-        //private async Task Receiving(ClientWebSocket client)
-        //{
-        //    try
-        //    {
-        //        var buffer = new byte[512];
-        //        bool isReceiving = true;
-
-        //        while (isReceiving)
-        //        {
-
-        //            var wsResult = await client.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-        //            SpeechServiceResult wssr;
-
-        //            var resStr = Encoding.UTF8.GetString(buffer, 0, wsResult.Count);
-
-        //            switch (wsResult.MessageType)
-        //            {
-        //                // Incoming text messages can be hypotheses about the words the service recognized or the final
-        //                // phrase, which is a recognition result that won't change.
-        //                case WebSocketMessageType.Text:
-        //                    wssr = ParseWebSocketSpeechResult(resStr);
-        //                    Debug.Log(resStr + lineSeparator + "*** Message End ***" + lineSeparator);
-
-        //                    // Set the recognized text field in the client for future lookup, this can be stored
-        //                    // in either the Text property (for hypotheses) or DisplayText (for final phrases).
-        //                    if (wssr.Path == SpeechServiceResult.SpeechMessagePaths.SpeechHypothesis)
-        //                    {
-        //                        RecognizedText = wssr.Result.Text;
-        //                    }
-        //                    else if(wssr.Path == SpeechServiceResult.SpeechMessagePaths.SpeechPhrase)
-        //                    {
-        //                        RecognizedText = wssr.Result.DisplayText;
-        //                        state = JobState.Completed;
-        //                    }
-        //                    // Raise an event with the message we just received.
-        //                    // We also keep the last message received in case the client app didn't subscribe to the event.
-        //                    LastMessageReceived = wssr;
-        //                    if (OnMessageReceived != null)
-        //                    {
-        //                        OnMessageReceived.Invoke(wssr);
-        //                    }
-        //                    break;
-
-        //                case WebSocketMessageType.Binary:
-        //                    Debug.Log("Binary messages are not suppported by this application.");
-        //                    break;
-
-        //                case WebSocketMessageType.Close:
-        //                    string description = client.CloseStatusDescription;
-        //                    Debug.Log($"Closing WebSocket with Status: {description}");
-        //                    await client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "", CancellationToken.None);
-        //                    isReceiving = false;
-        //                    break;
-
-        //                default:
-        //                    Debug.Log("The message type was not recognized.");
-        //                    break;
-        //            }
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Debug.Log("An exception occurred while receiving a message:" + lineSeparator + ex.Message);
-        //    }
-        //}
 
         public static UInt16 ReverseBytes(UInt16 value)
         {
