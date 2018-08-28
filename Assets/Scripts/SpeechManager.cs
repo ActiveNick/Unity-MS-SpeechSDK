@@ -345,9 +345,11 @@ public class SpeechManager : MonoBehaviour {
 #else
     private void UpdateUICanvasLabel(string text, FontStyle style)
     {
-        
-        DisplayLabel.text = text;
-        DisplayLabel.fontStyle = style;
+        CustomUnityDispatcher.RunOnMainThread(() =>
+        {
+            DisplayLabel.text = text;
+            DisplayLabel.fontStyle = style;
+        });
     }
 #endif
 
@@ -503,22 +505,29 @@ public class SpeechManager : MonoBehaviour {
         Debug.Log("Stopping microphone recording.");
 
 #if WINDOWS_UWP
-        UnityEngine.WSA.Application.InvokeOnAppThread(() =>
+        if (!UnityEngine.WSA.Application.RunningOnAppThread())
         {
-            audiosource.Stop();
-            Microphone.End(null);
-            if (isRecording)
+            UnityEngine.WSA.Application.InvokeOnAppThread(() =>
             {
-                var audioData = new byte[recordingData.Count];
-                recordingData.CopyTo(audioData);
-                WriteAudioDataToRiffWAVFile(audioData, "recording.wav");
-                isRecording = false;
-                isRecognizing = false;
-            }
-            Debug.Log($"Microphone stopped recording at frequency {audiosource.clip.frequency}Hz.");
+                StopMicrophoneAndSaveIfRecording();
 
-        }, false);
+            }, false);
+        }
+        else
+        {
+            StopMicrophoneAndSaveIfRecording();
+        }
 #else
+        CustomUnityDispatcher.RunOnMainThread(() =>
+        {
+            StopMicrophoneAndSaveIfRecording();
+        });
+#endif
+        UpdateUICanvasLabel("Recording stopped. Audio saved to file 'recording.wav'.", FontStyle.Normal);
+    }
+
+    private void StopMicrophoneAndSaveIfRecording()
+    {
         audiosource.Stop();
         Microphone.End(null);
         if (isRecording)
@@ -528,19 +537,17 @@ public class SpeechManager : MonoBehaviour {
             WriteAudioDataToRiffWAVFile(audioData, "recording.wav");
             isRecording = false;
             isRecognizing = false;
-            Debug.Log($"Microphone stopped recording at frequency {audiosource.clip.frequency}Hz.");
         }
-#endif
-        UpdateUICanvasLabel("Recording stopped. Audio saved to file 'recording.wav'.", FontStyle.Normal);
+        Debug.Log($"Microphone stopped recording at frequency {audiosource.clip.frequency}Hz.");
     }
 
-	/// <summary>
-	/// Called when speech has ended.
-	/// </summary>
-	/// <remarks>
-	/// This may come from client-side or service-side silence detection.
-	/// </remarks>
-	protected virtual void OnSpeechEnded()
+    /// <summary>
+    /// Called when speech has ended.
+    /// </summary>
+    /// <remarks>
+    /// This may come from client-side or service-side silence detection.
+    /// </remarks>
+    protected virtual void OnSpeechEnded()
 	{
 		Debug.Log("Speech Ended");
 		if (SpeechEnded != null) { SpeechEnded(this, EventArgs.Empty); }
