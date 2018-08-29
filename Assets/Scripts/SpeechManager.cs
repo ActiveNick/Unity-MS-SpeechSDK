@@ -378,37 +378,14 @@ public class SpeechManager : MonoBehaviour {
         }
     }
 
-#if WINDOWS_UWP
-
     private void UpdateUICanvasLabel(string text, FontStyle style)
     {
-        if (!UnityEngine.WSA.Application.RunningOnAppThread())
-        {
-            UnityEngine.WSA.Application.InvokeOnAppThread(() =>
-            {
-                DisplayLabel.text = text;
-                DisplayLabel.fontStyle = style;
-
-            }, false);
-        } else
-        {
-            DisplayLabel.text = text;
-            DisplayLabel.fontStyle = style;
-        }
-    }
-//#elif UNITY_IOS
-
-    
-#else
-    private void UpdateUICanvasLabel(string text, FontStyle style)
-    {
-        CustomUnityDispatcher.RunOnMainThread(() =>
+        UnityDispatcher.InvokeOnAppThread(() =>
         {
             DisplayLabel.text = text;
             DisplayLabel.fontStyle = style;
         });
     }
-#endif
 
     /// <summary>
     /// OnAudioFilterRead is used to capture live microphone audio when recording or recognizing.
@@ -572,41 +549,21 @@ public class SpeechManager : MonoBehaviour {
     {
         Debug.Log("Stopping microphone recording.");
 
-#if WINDOWS_UWP
-        if (!UnityEngine.WSA.Application.RunningOnAppThread())
+        UnityDispatcher.InvokeOnAppThread(() =>
         {
-            UnityEngine.WSA.Application.InvokeOnAppThread(() =>
+            audiosource.Stop();
+            Microphone.End(null);
+            if (isRecording)
             {
-                StopMicrophoneAndSaveIfRecording();
-
-            }, false);
-        }
-        else
-        {
-            StopMicrophoneAndSaveIfRecording();
-        }
-#else
-        CustomUnityDispatcher.RunOnMainThread(() =>
-        {
-            StopMicrophoneAndSaveIfRecording();
+                var audioData = new byte[recordingData.Count];
+                recordingData.CopyTo(audioData);
+                WriteAudioDataToRiffWAVFile(audioData, "recording.wav");
+                isRecording = false;
+                isRecognizing = false;
+            }
+            Debug.Log($"Microphone stopped recording at frequency {audiosource.clip.frequency}Hz.");
         });
-#endif
         UpdateUICanvasLabel("Recording stopped. Audio saved to file 'recording.wav'.", FontStyle.Normal);
-    }
-
-    private void StopMicrophoneAndSaveIfRecording()
-    {
-        audiosource.Stop();
-        Microphone.End(null);
-        if (isRecording)
-        {
-            var audioData = new byte[recordingData.Count];
-            recordingData.CopyTo(audioData);
-            WriteAudioDataToRiffWAVFile(audioData, "recording.wav");
-            isRecording = false;
-            isRecognizing = false;
-        }
-        Debug.Log($"Microphone stopped recording at frequency {audiosource.clip.frequency}Hz.");
     }
 
     /// <summary>
