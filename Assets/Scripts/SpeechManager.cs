@@ -139,24 +139,35 @@ public class SpeechManager : MonoBehaviour {
         string authenticationKey = @"4d5a1beefe364f8986d63a877ebd51d5";
 #endif
 
-        Debug.Log($"Instantiating Cognitive Services Speech Recognition Service client.");
-        recoServiceClient = new SpeechRecognitionClient(useClassicBingSpeechService);
-        
-        // Make sure to match the region to the Azure region where you created the service.
-        // Note the region is NOT used for the old Bing Speech service
-        region = "westus";
+        try
+        {
+            Debug.Log($"Instantiating Cognitive Services Speech Recognition Service client.");
+            recoServiceClient = new SpeechRecognitionClient(useClassicBingSpeechService);
 
-        auth = new CogSvcSocketAuthentication();
-        Task<string> authenticating = auth.Authenticate(authenticationKey, region, useClassicBingSpeechService);
+            // Make sure to match the region to the Azure region where you created the service.
+            // Note the region is NOT used for the old Bing Speech service
+            region = "westus";
 
-        // Since the authentication process needs to run asynchronously, we run the code in a coroutine to
-        // avoid blocking the main Unity thread.
-        // Make sure you have successfully obtained a token before making any Speech Service calls.
-        StartCoroutine(AuthenticateSpeechService(authenticating));
+            auth = new CogSvcSocketAuthentication();
+            Task<string> authenticating = auth.Authenticate(authenticationKey, region, useClassicBingSpeechService);
 
-        // Register an event to capture recognition events
-        Debug.Log($"Registering Speech Recognition event handler.");
-        recoServiceClient.OnMessageReceived += RecoServiceClient_OnMessageReceived;
+            // Since the authentication process needs to run asynchronously, we run the code in a coroutine to
+            // avoid blocking the main Unity thread.
+            // Make sure you have successfully obtained a token before making any Speech Service calls.
+            StartCoroutine(AuthenticateSpeechService(authenticating));
+
+            // Register an event to capture recognition events
+            Debug.Log($"Registering Speech Recognition event handler.");
+            recoServiceClient.OnMessageReceived += RecoServiceClient_OnMessageReceived;
+
+        }
+        catch (Exception ex)
+        {
+            string msg = String.Format("Error: Initialization failed. See error details below:{0}{1}{2}{3}",
+                            Environment.NewLine, ex.ToString(), Environment.NewLine, ex.Message);
+            Debug.LogError(msg);
+            UpdateUICanvasLabel(msg, FontStyle.Normal);
+        }
     }
 
     /// <summary>
@@ -190,7 +201,7 @@ public class SpeechManager : MonoBehaviour {
         {
             string msg = String.Format("Cognitive Services authentication failed. Please check your subscription key and try again. See error details below:{0}{1}{2}{3}",
                             Environment.NewLine, ex.ToString(), Environment.NewLine, ex.Message);
-            Debug.Log(msg);
+            Debug.LogError(msg);
             UpdateUICanvasLabel(msg, FontStyle.Normal);
         }
     }
@@ -201,29 +212,41 @@ public class SpeechManager : MonoBehaviour {
     /// </summary>
     public void StartSpeechRecognitionFromFile()
     {
-        if (isAuthenticated)
+        try
         {
-            // Replace this with your own file. Add it to the project and mark it as "Content" and "Copy if newer".
-            //string audioFilePath = Path.Combine(Application.streamingAssetsPath, "Thisisatest.wav");
-            string audioFilePath = Path.Combine(Application.temporaryCachePath, "recording.wav");
+            if (isAuthenticated)
+            {
+                // Replace this with your own file. Add it to the project and mark it as "Content" and "Copy if newer".
+                //string audioFilePath = Path.Combine(Application.streamingAssetsPath, "Thisisatest.wav");
+                string audioFilePath = Path.Combine(Application.temporaryCachePath, "recording.wav");
 
-            if (!File.Exists(audioFilePath)) {
-                UpdateUICanvasLabel("The file 'recording.wav' was not found. make sure to record one before starting recognition.", FontStyle.Normal);
-                return;
+                if (!File.Exists(audioFilePath))
+                {
+                    UpdateUICanvasLabel("The file 'recording.wav' was not found. make sure to record one before starting recognition.", FontStyle.Normal);
+                    return;
+                }
+
+                Debug.Log($"Using speech audio file located at {audioFilePath}");
+
+                Debug.Log($"Creating Speech Recognition job from audio file.");
+                Task<bool> recojob = recoServiceClient.CreateSpeechRecognitionJobFromFile(audioFilePath, auth.GetAccessToken(), region);
+
+                StartCoroutine(CompleteSpeechRecognitionJob(recojob));
+                Debug.Log($"Speech Recognition job started.");
+            }
+            else
+            {
+                string msg = "Cannot start speech recognition job since authentication has not successfully completed.";
+                Debug.Log(msg);
+                UpdateUICanvasLabel(msg, FontStyle.Normal);
             }
 
-            Debug.Log($"Using speech audio file located at {audioFilePath}");
-
-            Debug.Log($"Creating Speech Recognition job from audio file.");
-            Task<bool> recojob = recoServiceClient.CreateSpeechRecognitionJobFromFile(audioFilePath, auth.GetAccessToken(), region);
-
-            StartCoroutine(CompleteSpeechRecognitionJob(recojob));
-            Debug.Log($"Speech Recognition job started.");
         }
-        else
+        catch (Exception ex)
         {
-            string msg = "Cannot start speech recognition job since authentication has not successfully completed.";
-            Debug.Log(msg);
+            string msg = String.Format("Error: Something went wrong when starting the recognition process from a file. See error details below:{0}{1}{2}{3}",
+                            Environment.NewLine, ex.ToString(), Environment.NewLine, ex.Message);
+            Debug.LogError(msg);
             UpdateUICanvasLabel(msg, FontStyle.Normal);
         }
     }
@@ -235,17 +258,28 @@ public class SpeechManager : MonoBehaviour {
     /// </summary>
     public void StartSpeechRecognitionFromMicrophone()
     {
-        if (isAuthenticated)
+        try
         {
-            Debug.Log($"Creating Speech Recognition job from microphone.");
-            Task<bool> recojob = recoServiceClient.CreateSpeechRecognitionJobFromVoice(auth.GetAccessToken(), region, samplingResolution, numChannels, samplingRate);
+            if (isAuthenticated)
+            {
+                Debug.Log($"Creating Speech Recognition job from microphone.");
+                Task<bool> recojob = recoServiceClient.CreateSpeechRecognitionJobFromVoice(auth.GetAccessToken(), region, samplingResolution, numChannels, samplingRate);
 
-            StartCoroutine(WaitUntilRecoServiceIsReady());
+                StartCoroutine(WaitUntilRecoServiceIsReady());
+            }
+            else
+            {
+                string msg = "Cannot start speech recognition job since authentication has not successfully completed.";
+                Debug.Log(msg);
+                UpdateUICanvasLabel(msg, FontStyle.Normal);
+            }
+
         }
-        else
+        catch (Exception ex)
         {
-            string msg = "Cannot start speech recognition job since authentication has not successfully completed.";
-            Debug.Log(msg);
+            string msg = String.Format("Error: Something went wrong when starting the recognition process from the microphone. See error details below:{0}{1}{2}{3}",
+                            Environment.NewLine, ex.ToString(), Environment.NewLine, ex.Message);
+            Debug.LogError(msg);
             UpdateUICanvasLabel(msg, FontStyle.Normal);
         }
     }
@@ -262,26 +296,38 @@ public class SpeechManager : MonoBehaviour {
             yield return null;
         }
 
-        if (recoServiceClient.State == SpeechRecognitionClient.JobState.ReadyForAudioPackets) {
-
-            requestId = recoServiceClient.CurrentRequestId;
-
-            Debug.Log("Initializing microphone for recording.");
-            // Passing null for deviceName in Microphone methods to use the default microphone.
-            audiosource.clip = Microphone.Start(null, true, maxRecordingDuration, samplingRate);
-            audiosource.loop = true;
-
-            // Wait until the microphone starts recording
-            while (!(Microphone.GetPosition(null) > 0)) { };
-            isRecognizing = true;
-            audiosource.Play();
-            Debug.Log("Microphone recording has started.");
-            UpdateUICanvasLabel("Microphone is live, start talking now...", FontStyle.Normal);
-        } 
-        else
+        try
         {
-            // Something went wrong during job initialization, handle it
-            Debug.Log("Something went wrong during job initialization.");
+            if (recoServiceClient.State == SpeechRecognitionClient.JobState.ReadyForAudioPackets)
+            {
+
+                requestId = recoServiceClient.CurrentRequestId;
+
+                Debug.Log("Initializing microphone for recording.");
+                // Passing null for deviceName in Microphone methods to use the default microphone.
+                audiosource.clip = Microphone.Start(null, true, maxRecordingDuration, samplingRate);
+                audiosource.loop = true;
+
+                // Wait until the microphone starts recording
+                while (!(Microphone.GetPosition(null) > 0)) { };
+                isRecognizing = true;
+                audiosource.Play();
+                Debug.Log("Microphone recording has started.");
+                UpdateUICanvasLabel("Microphone is live, start talking now...", FontStyle.Normal);
+            }
+            else
+            {
+                // Something went wrong during job initialization, handle it
+                Debug.Log("Something went wrong during job initialization.");
+            }
+
+        }
+        catch (Exception ex)
+        {
+            string msg = String.Format("Error: Something went wrong when starting the microphone for audio recording. See error details below:{0}{1}{2}{3}",
+                            Environment.NewLine, ex.ToString(), Environment.NewLine, ex.Message);
+            Debug.LogError(msg);
+            UpdateUICanvasLabel(msg, FontStyle.Normal);
         }
     }
 
@@ -302,22 +348,33 @@ public class SpeechManager : MonoBehaviour {
     /// <param name="result"></param>
     private void RecoServiceClient_OnMessageReceived(SpeechServiceResult result)
     {
-        if (result.Path == SpeechServiceResult.SpeechMessagePaths.SpeechHypothesis)
+        try
         {
-
-            UpdateUICanvasLabel(result.Result.Text, FontStyle.Italic);
-        }
-        else if (result.Path == SpeechServiceResult.SpeechMessagePaths.SpeechPhrase)
-        {
-            if (isRecognizing)
+            if (result.Path == SpeechServiceResult.SpeechMessagePaths.SpeechHypothesis)
             {
-                StopRecording();
+
+                UpdateUICanvasLabel(result.Result.Text, FontStyle.Italic);
+            }
+            else if (result.Path == SpeechServiceResult.SpeechMessagePaths.SpeechPhrase)
+            {
+                if (isRecognizing)
+                {
+                    StopRecording();
+                }
+
+                UpdateUICanvasLabel(result.Result.DisplayText, FontStyle.Normal);
+
+                Debug.Log("* RECOGNITION STATUS: " + result.Result.RecognitionStatus);
+                Debug.Log("* FINAL RESULT: " + result.Result.DisplayText);
             }
 
-            UpdateUICanvasLabel(result.Result.DisplayText, FontStyle.Normal);
-
-            Debug.Log("* RECOGNITION STATUS: " + result.Result.RecognitionStatus);
-            Debug.Log("* FINAL RESULT: " + result.Result.DisplayText);
+        }
+        catch (Exception ex)
+        {
+            string msg = String.Format("Error: Something went wrong when posting speech recognition results. See error details below:{0}{1}{2}{3}",
+                            Environment.NewLine, ex.ToString(), Environment.NewLine, ex.Message);
+            Debug.LogError(msg);
+            UpdateUICanvasLabel(msg, FontStyle.Normal);
         }
     }
 
@@ -365,88 +422,99 @@ public class SpeechManager : MonoBehaviour {
     /// <param name="channels"></param>
     void OnAudioFilterRead(float[] data, int channels)
     {
-        //Debug.Log($"Received audio data of size: {data.Length} - First sample: {data[0]}");
-
-        // Debug.Log($"Received audio data: {channels} channel(s), size {data.Length} samples.");
-
-        float maxAudio = 0f;
-
-        //Debug.Log($"Received audio data: {channels} channel(s), size {data.Length} samples.");
-
-        if (isRecording || isRecognizing)
+        try
         {
-            byte[] audiodata = ConvertAudioClipDataToInt16ByteArray(data);
-            for (int i = 0; i < data.Length; i++)
+            //Debug.Log($"Received audio data of size: {data.Length} - First sample: {data[0]}");
+
+            // Debug.Log($"Received audio data: {channels} channel(s), size {data.Length} samples.");
+
+            float maxAudio = 0f;
+
+            //Debug.Log($"Received audio data: {channels} channel(s), size {data.Length} samples.");
+
+            if (isRecording || isRecognizing)
             {
-                if (UseClientSideSilenceDetection)
+                byte[] audiodata = ConvertAudioClipDataToInt16ByteArray(data);
+                for (int i = 0; i < data.Length; i++)
                 {
-                    // Get the max amplitude out of the sample
-                    maxAudio = Mathf.Max(maxAudio, Mathf.Abs(data[i]));
+                    if (UseClientSideSilenceDetection)
+                    {
+                        // Get the max amplitude out of the sample
+                        maxAudio = Mathf.Max(maxAudio, Mathf.Abs(data[i]));
+                    }
+
+                    // Mute all the samples to avoid audio feedback into the microphone
+                    data[i] = 0.0f;
                 }
 
-                // Mute all the samples to avoid audio feedback into the microphone
-                data[i] = 0.0f;
-            }
-
-            if (UseClientSideSilenceDetection)
-            {
-                // Was THIS sample silent?
-                bool silentThisSample = (maxAudio <= SilenceThreshold);
-                if (silentThisSample)
+                if (UseClientSideSilenceDetection)
                 {
-                    // Yes this sample was silent.
-                    // If we haven't been in silence yet, notify that we're entering silence
-                    if (!isSilent)
+                    // Was THIS sample silent?
+                    bool silentThisSample = (maxAudio <= SilenceThreshold);
+                    if (silentThisSample)
                     {
-                        Debug.Log($"Silence Starting... ({maxAudio})");
-                        isSilent = true;
-                        silenceStarted = DateTime.Now.Ticks; // Must use ticks since Unity's Time class can't be used on this thread.
-                        silenceNotified = false;
-                    }
-                    else
-                    {
-                        // Looks like we've been in silence for a while.
-                        // If we haven't already notified of a timeout, check to see if a timeout has occurred.
-                        if (!silenceNotified)
+                        // Yes this sample was silent.
+                        // If we haven't been in silence yet, notify that we're entering silence
+                        if (!isSilent)
                         {
-                            // Have we crossed the silence threshold
-                            TimeSpan duration = TimeSpan.FromTicks(DateTime.Now.Ticks - silenceStarted);
-                            if (duration.TotalSeconds >= SilenceTimeout)
+                            Debug.Log($"Silence Starting... ({maxAudio})");
+                            isSilent = true;
+                            silenceStarted = DateTime.Now.Ticks; // Must use ticks since Unity's Time class can't be used on this thread.
+                            silenceNotified = false;
+                        }
+                        else
+                        {
+                            // Looks like we've been in silence for a while.
+                            // If we haven't already notified of a timeout, check to see if a timeout has occurred.
+                            if (!silenceNotified)
                             {
-                                Debug.Log("Silence Timeout");
+                                // Have we crossed the silence threshold
+                                TimeSpan duration = TimeSpan.FromTicks(DateTime.Now.Ticks - silenceStarted);
+                                if (duration.TotalSeconds >= SilenceTimeout)
+                                {
+                                    Debug.Log("Silence Timeout");
 
-                                // Mark notified
-                                silenceNotified = true;
+                                    // Mark notified
+                                    silenceNotified = true;
 
-                                // Notify
-                                OnSpeechEnded();
+                                    // Notify
+                                    OnSpeechEnded();
+                                }
                             }
                         }
                     }
-                }
-                else
-                {
-                    // No this sample was not silent. 
-                    // Check to see if we're leaving silence.
-                    if (isSilent)
+                    else
                     {
-                        Debug.Log($"Silence Ended ({maxAudio})");
+                        // No this sample was not silent. 
+                        // Check to see if we're leaving silence.
+                        if (isSilent)
+                        {
+                            Debug.Log($"Silence Ended ({maxAudio})");
 
-                        // No longer silent
-                        isSilent = false;
+                            // No longer silent
+                            isSilent = false;
+                        }
                     }
-                }
 
+                }
+                if (isRecording) // We're only concerned with saving all audio data if we're persist to a file
+                {
+                    recordingData.AddRange(audiodata);
+                    recordingSamples += audiodata.Length;
+                }
+                else // if we're not recording, then we're in recognition mode
+                {
+                    recoServiceClient.SendAudioPacket(requestId, audiodata);
+                }
             }
-            if (isRecording) // We're only concerned with saving all audio data if we're persist to a file
-            {
-                recordingData.AddRange(audiodata);
-                recordingSamples += audiodata.Length;
-            }
-            else // if we're not recording, then we're in recognition mode
-            {
-                recoServiceClient.SendAudioPacket(requestId, audiodata);
-            }
+
+        }
+        catch (Exception ex)
+        {
+            string msg = String.Format("Error: Something went wrong when reading live audio data from the microphone. See error details below:{0}{1}{2}{3}",
+                            Environment.NewLine, ex.ToString(), Environment.NewLine, ex.Message);
+            Debug.LogError(msg);
+            UpdateUICanvasLabel(msg, FontStyle.Normal);
         }
     }
 
@@ -559,23 +627,34 @@ public class SpeechManager : MonoBehaviour {
     /// <param name="audiodata"></param>
     private void WriteAudioDataToRiffWAVFile(byte[] audiodata, string filename)
     {
-        string filePath = Path.Combine(Application.temporaryCachePath, filename);
-        Debug.Log($"Opening new WAV file for recording: {filePath}");
+        try
+        {
+            string filePath = Path.Combine(Application.temporaryCachePath, filename);
+            Debug.Log($"Opening new WAV file for recording: {filePath}");
 
-        FileStream fs = new FileStream(filePath, FileMode.Create);
-        BinaryWriter wr = new BinaryWriter(fs);
+            FileStream fs = new FileStream(filePath, FileMode.Create);
+            BinaryWriter wr = new BinaryWriter(fs);
 
-        // Writing WAV header
-        Debug.Log($"Writing WAV header to file with a count of {recordingSamples} samples.");
-        var header = recoServiceClient.BuildRiffWAVHeader(recordingSamples, samplingResolution, numChannels, samplingRate);
-        wr.Write(header, 0, header.Length);
+            // Writing WAV header
+            Debug.Log($"Writing WAV header to file with a count of {recordingSamples} samples.");
+            var header = recoServiceClient.BuildRiffWAVHeader(recordingSamples, samplingResolution, numChannels, samplingRate);
+            wr.Write(header, 0, header.Length);
 
-        // Write the audio data to the main file body
-        Debug.Log($"Writing {audiodata.Length} WAV data samples to file.");
-        wr.Write(audiodata, 0, audiodata.Length);
+            // Write the audio data to the main file body
+            Debug.Log($"Writing {audiodata.Length} WAV data samples to file.");
+            wr.Write(audiodata, 0, audiodata.Length);
 
-        wr.Dispose();
-        fs.Dispose();
-        Debug.Log($"Completed writing {audiodata.Length} WAV data samples to file.");
+            wr.Dispose();
+            fs.Dispose();
+            Debug.Log($"Completed writing {audiodata.Length} WAV data samples to file.");
+
+        }
+        catch (Exception ex)
+        {
+            string msg = String.Format("Error: Something went wrong when saving the audio data to a WAV file. See error details below:{0}{1}{2}{3}",
+                            Environment.NewLine, ex.ToString(), Environment.NewLine, ex.Message);
+            Debug.LogError(msg);
+            UpdateUICanvasLabel(msg, FontStyle.Normal);
+        }
     }
 }
