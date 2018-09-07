@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-
 #if WINDOWS_UWP
 /// <summary>
 /// A helper class for dispatching actions to run on various Unity threads.
@@ -39,9 +38,8 @@ public class UnityDispatcher : MonoBehaviour
 {
     #region Member Variables
     static private UnityDispatcher instance;
+    static private Queue<Action> queue = new Queue<Action>(8);
     static private volatile bool queued = false;
-    static private List<Action> backlog = new List<Action>(8);
-    static private List<Action> actions = new List<Action>(8);
     #endregion // Member Variables
 
     #region Internal Methods
@@ -59,22 +57,24 @@ public class UnityDispatcher : MonoBehaviour
     #region Unity Overrides
     protected virtual void Update()
     {
-        if (queued)
+        // Action placeholder
+        Action action = null;
+
+        // Do this as long as there's something in the queue
+        while (queued)
         {
-            lock (backlog)
+            // Lock only long enough to take an item
+            lock (queue)
             {
-                var tmp = actions;
-                actions = backlog;
-                backlog = tmp;
-                queued = false;
+                // Get the next action
+                action = queue.Dequeue();
+
+                // Have we exhausted the queue?
+                if (queue.Count == 0) { queued = false; }
             }
 
-            foreach (var action in actions)
-            {
-                action();
-            }
-
-            actions.Clear();
+            // Execute the action outside of the lock
+            action();
         }
     }
     #endregion // Unity Overrides
@@ -88,9 +88,16 @@ public class UnityDispatcher : MonoBehaviour
     /// </param>
     static public void InvokeOnAppThread(Action action)
     {
-        lock (backlog)
+        // Validate
+        if (action == null) throw new ArgumentNullException(nameof(action));
+
+        // Lock to be thread-safe
+        lock (queue)
         {
-            backlog.Add(action);
+            // Add the action
+            queue.Enqueue(action);
+
+            // Action is in the queue
             queued = true;
         }
     }

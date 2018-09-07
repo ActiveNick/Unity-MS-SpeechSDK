@@ -6,6 +6,10 @@ using System.Threading.Tasks;
 
 namespace SpeechRecognitionService
 {
+    /// <summary>
+    /// Used to send Telemetry after a speech recognition job has completed.
+    /// Currently not in use (yet) in the sample. Work in progress.
+    /// </summary>
     public class Telemetry
     {
         public Receivedmessage[] ReceivedMessages { get; set; }

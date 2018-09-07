@@ -664,6 +664,7 @@ PlayerSettings:
   scriptingDefineSymbols: {}
   platformArchitecture: {}
   scriptingBackend:
+    Android: 0
     Metro: 2
     Standalone: 0
   il2cppCompilerConfiguration: {}
@@ -672,6 +673,7 @@ PlayerSettings:
   additionalIl2CppArgs: 
   scriptingRuntimeVersion: 1
   apiCompatibilityLevelPerPlatform:
+    Metro: 3
     Standalone: 3
   m_RenderingPath: 1
   m_MobileRenderingPath: 1

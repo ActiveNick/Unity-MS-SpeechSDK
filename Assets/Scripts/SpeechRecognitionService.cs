@@ -68,6 +68,7 @@ namespace SpeechRecognitionService
         public ClientWebSocket SpeechWebSocketClient { get; set; }
 #endif
         public string CurrentRequestId { get; set; }
+        //private Telemetry jobtelemetry;
         public JobState State
         {
             get { return state; }
@@ -108,6 +109,7 @@ namespace SpeechRecognitionService
                 {
                     // Create a unique request ID, must be a UUID in "no-dash" format
                     var requestId = Guid.NewGuid().ToString("N");
+                    //jobtelemetry = new Telemetry();
                     ArraySegment<byte> buffer = CreateSpeechConfigMessagePayloadBuffer(requestId);
 
                     if (!IsWebSocketClientOpen(SpeechWebSocketClient)) return;
@@ -208,6 +210,7 @@ namespace SpeechRecognitionService
                 {
                     // Create a unique request ID, must be a UUID in "no-dash" format
                     CurrentRequestId = Guid.NewGuid().ToString("N");
+                    //jobtelemetry = new Telemetry();
                     ArraySegment<byte> buffer = CreateSpeechConfigMessagePayloadBuffer(CurrentRequestId);
 
                     if (!IsWebSocketClientOpen(SpeechWebSocketClient)) return;
@@ -510,7 +513,8 @@ namespace SpeechRecognitionService
             }
             catch (Exception ex)
             {
-                Debug.Log("An exception occurred while receiving a message:" + Environment.NewLine + ex.Message);
+                string msg = String.Format("Error: Something went while receiving a message. See error details below:{0}{1}{2}{3}",
+                Environment.NewLine, ex.ToString(), Environment.NewLine, ex.Message);
             }
         }
 #endif
@@ -540,6 +544,28 @@ namespace SpeechRecognitionService
             var encoded = Encoding.UTF8.GetBytes(speechMsgBuilder.ToString());
             var buffer = new ArraySegment<byte>(encoded, 0, encoded.Length);
             return buffer;
+        }
+
+        private bool SendEndTurnTelemetry()
+        {
+            string turnInfobBodyJSON = "";
+
+            // Create speech.config message from required headers and JSON payload
+            StringBuilder speechMsgBuilder = new StringBuilder();
+            speechMsgBuilder.Append("path:telemetry" + lineSeparator);
+            speechMsgBuilder.Append("x-requestid:" + CurrentRequestId + lineSeparator);
+            speechMsgBuilder.Append($"x-timestamp:{DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffK")}" + lineSeparator);
+            speechMsgBuilder.Append($"content-type:application/json; charset=utf-8" + lineSeparator);
+            speechMsgBuilder.Append(lineSeparator);
+            speechMsgBuilder.Append(turnInfobBodyJSON);
+            var strh = speechMsgBuilder.ToString();
+
+            var encoded = Encoding.UTF8.GetBytes(speechMsgBuilder.ToString());
+            var buffer = new ArraySegment<byte>(encoded, 0, encoded.Length);
+
+            // send it
+
+            return true;
         }
 
         /// <summary>
@@ -743,6 +769,10 @@ namespace SpeechRecognitionService
                                             break;
                                         case "speech.hypothesis":
                                             wssr.Path = SpeechServiceResult.SpeechMessagePaths.SpeechHypothesis;
+                                            //jobtelemetry.ReceivedMessages.Append<Receivedmessage>(
+                                            //    new Receivedmessage(
+
+                                            //    ));
                                             break;
                                         case "speech.enddetected":
                                             wssr.Path = SpeechServiceResult.SpeechMessagePaths.SpeechEndDetected;
