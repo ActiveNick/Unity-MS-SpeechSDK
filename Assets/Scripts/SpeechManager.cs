@@ -49,8 +49,11 @@ using UnityEngine.UI;
 using SpeechRecognitionService;
 using Microsoft.Unity;
 
-public class SpeechManager : MonoBehaviour {
+public class SpeechManager : MonoBehaviour
+{
 
+    [SerializeField] private SpawnController spawnController;
+    
     // Public fields
     public Text DisplayLabel;
 
@@ -361,8 +364,8 @@ public class SpeechManager : MonoBehaviour {
         {
             if (result.Path == SpeechServiceResult.SpeechMessagePaths.SpeechHypothesis)
             {
-
                 UpdateUICanvasLabel(result.Result.Text, FontStyle.Italic);
+                spawnController.SetCurrentText(result.Result.Text);
             }
             else if (result.Path == SpeechServiceResult.SpeechMessagePaths.SpeechPhrase)
             {
@@ -370,8 +373,10 @@ public class SpeechManager : MonoBehaviour {
                 {
                     StopRecording();
                 }
-
+                
                 UpdateUICanvasLabel(result.Result.DisplayText, FontStyle.Normal);
+                spawnController.SetRecognizedText(result.Result.DisplayText);
+
 
                 Debug.Log("* RECOGNITION STATUS: " + result.Result.RecognitionStatus);
                 Debug.Log("* FINAL RESULT: " + result.Result.DisplayText);
@@ -391,6 +396,7 @@ public class SpeechManager : MonoBehaviour {
     {
         UnityDispatcher.InvokeOnAppThread(() =>
         {
+            
             DisplayLabel.text = text;
             DisplayLabel.fontStyle = style;
         });

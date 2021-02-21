@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ContentModelStore">
+    <e p="$PROJECT_DIR$/../Library/Caches/Rider2018.3/extResources" t="IncludeRecursive" />
+    <e p="$PROJECT_DIR$/../Library/Caches/Rider2018.3/resharper-host/local/Transient/ReSharperHost/v183/SolutionCaches/_Unity-MS-SpeechSDK.-1423234532.00" t="ExcludeRecursive" />
+    <e p="$PROJECT_DIR$" t="IncludeRecursive">
+      <e p="Assembly-CSharp.csproj" t="IncludeRecursive" />
+      <e p="Assets" t="Include">
+        <e p="_Project" t="Include">
+          <e p="Scripts" t="Include">
+            <e p="Controllers" t="Include">
+              <e p="SpawnController.cs" t="Include" />
+            </e>
+            <e p="ScriptableObjects" t="Include">
+              <e p="CommandList.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Scripts" t="Include">
+          <e p="CogSvcSocketAuthentication.cs" t="Include" />
+          <e p="RecognitionContent.cs" t="Include" />
+          <e p="SecretHelper.cs" t="Include" />
+          <e p="SpeechManager.cs" t="Include" />
+          <e p="SpeechRecognitionService.cs" t="Include" />
+          <e p="SpeechServiceResult.cs" t="Include" />
+          <e p="Telemetry.cs" t="Include" />
+          <e p="UnityDispatcher.cs" t="Include" />
+        </e>
+      </e>
+      <e p="Library" t="ExcludeRecursive" />
+      <e p="obj" t="ExcludeRecursive" />
+      <e p="packages" t="ExcludeRecursive" />
+      <e p="Temp" t="ExcludeRecursive">
+        <e p="Bin" t="ExcludeRecursive" />
+      </e>
+      <e p="Unity-MS-SpeechSDK.sln" t="IncludeFlat" />
+    </e>
+  </component>
+</project>

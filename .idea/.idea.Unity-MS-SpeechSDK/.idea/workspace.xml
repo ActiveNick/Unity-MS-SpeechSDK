@@ -1,0 +1,586 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="7f2a75e6-9a2f-4736-aada-8e4e5b868502" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/Assembly-CSharp.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/Assembly-CSharp.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scenes/DemoScene.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/DemoScene.unity" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/SpeechManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/SpeechManager.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/SpeechRecognitionService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/SpeechRecognitionService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ProjectSettings/EditorSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/EditorSettings.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ProjectSettings/ProjectVersion.txt" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/ProjectVersion.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Unity-MS-SpeechSDK.sln" beforeDir="false" afterPath="$PROJECT_DIR$/Unity-MS-SpeechSDK.sln" afterDir="false" />
+    </list>
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileEditorManager">
+    <leaf>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/Assets/Scripts/SpeechManager.cs">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="158">
+              <caret line="389" selection-start-line="389" selection-end-line="389" />
+              <folding>
+                <marker date="1613913092633" expanded="true" signature="0:1676" ph="/* Copyright (c) Microsoft. All rights reserved. ... */" />
+                <marker date="1613913092633" expanded="false" signature="1708:1942" ph="..." />
+                <marker date="1613913092633" expanded="true" signature="1986:26023" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="3473:3691" ph="/// This event is called when speech has ended. ... " />
+                <marker date="1613913092633" expanded="true" signature="3760:3851" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="3906:4591" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="3916:4077" ph="/* Make sure to comment the following line unless you're debugging ... */" />
+                <marker date="1613913092633" expanded="true" signature="4242:4402" ph="/* We need to make sure the microphone records at the same sampling rate as the audio ... */" />
+                <marker date="1613913092633" expanded="true" signature="4651:4658" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="4664:4935" ph="/// InitializeSpeechRecognitionService is used to authenticate the client app ... " />
+                <marker date="1613913092633" expanded="true" signature="4989:7472" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="5004:5719" ph="/* If you see an API key below, it's a trial key and will either expire soon or get invalidated. Please get your  ... */" />
+                <marker date="1613913092633" expanded="true" signature="5976:7121" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="6185:6343" ph="/* Make sure to match the region to the Azure region where you created the service. ... */" />
+                <marker date="1613913092633" expanded="true" signature="6559:6814" ph="/* Since the authentication process needs to run asynchronously, we run the code in a coroutine to ... */" />
+                <marker date="1613913092633" expanded="true" signature="7150:7466" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="7478:7797" ph="/// CoRoutine that checks to see if the async authentication process has completed. Once it completes, ... " />
+                <marker date="1613913092633" expanded="true" signature="7876:8995" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="8012:8063" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="8076:8582" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="8169:8323" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="8328:8572" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="8611:8989" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="9001:9169" ph="/// Feeds a pre-recorded speech audio file to the Speech Recognition service. ... " />
+                <marker date="1613913092633" expanded="true" signature="9218:11010" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="9236:10610" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="9279:10341" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="9310:9520" ph="/* Replace this with your own file. Add it to the project and mark it as &quot;Content&quot; and &quot;Copy if newer&quot;. ... */" />
+                <marker date="1613913092633" expanded="true" signature="9672:9891" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="10358:10599" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="10639:11004" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="11016:11238" ph="/// Starts recording the user's voice via microphone and then feeds the audio data ... " />
+                <marker date="1613913092633" expanded="true" signature="11293:12373" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="11311:11965" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="11354:11696" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="11713:11954" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="11994:12367" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="12379:12519" ph="/// CoRoutine that waits until the Speech Recognition job has been started. ... " />
+                <marker date="1613913092633" expanded="true" signature="12565:14301" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="12749:12800" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="12813:13902" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="12921:13691" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="13708:13891" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="13931:14295" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="14367:14610" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="14496:14547" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="14616:14834" ph="/// RecoServiceClient_OnMessageReceived event handler: ... " />
+                <marker date="1613913092633" expanded="true" signature="14915:16169" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="14933:15779" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="15031:15202" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="15291:15768" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="15340:15413" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="15808:16163" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="16237:16414" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="16291:16406" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="16420:17187" ph="/// OnAudioFilterRead is used to capture live microphone audio when recording or recognizing. ... " />
+                <marker date="1613913092633" expanded="true" signature="17242:21373" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="17260:20974" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="17283:17471" ph="/* Debug.Log($&quot;Received audio data of size: {data.Length} - First sample: {data[0]}&quot;); ... */" />
+                <marker date="1613913092633" expanded="true" signature="17654:20963" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="17801:18204" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="17874:18061" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="18256:20497" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="18439:20029" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="18486:18613" ph="/* Yes this sample was silent. ... */" />
+                <marker date="1613913092633" expanded="true" signature="18652:19016" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="19045:20007" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="19100:19264" ph="/* Looks like we've been in silence for a while. ... */" />
+                <marker date="1613913092633" expanded="true" signature="19314:19981" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="19603:19951" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="20054:20478" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="20101:20201" ph="/* No this sample was not silent. ... */" />
+                <marker date="1613913092633" expanded="true" signature="20239:20456" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="20608:20757" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="20836:20949" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="21003:21367" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="21379:21672" ph="/// Converts audio data from Unity's array of floats to a WAV-compatible byte array. ... " />
+                <marker date="1613913092633" expanded="true" signature="21749:22357" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="21933:22066" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="22363:22474" ph="/// Used only to record the microphone to a WAV file for testing purposes. ... " />
+                <marker date="1613913092633" expanded="true" signature="22507:23203" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="23209:23334" ph="/// Stops the microphone recording and saves to a WAV file. Used to validate WAV format. ... " />
+                <marker date="1613913092633" expanded="true" signature="23366:24093" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="23474:23979" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="23579:23868" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="24099:24280" ph="/// Called when speech has ended. ... " />
+                <marker date="1613913092633" expanded="true" signature="24323:24425" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="24431:24582" ph="/// Saves a byte array of audio samples to a properly formatted WAV file. ... " />
+                <marker date="1613913092633" expanded="true" signature="24662:26021" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="24680:25630" ph="{...}" />
+                <marker date="1613913092633" expanded="true" signature="25659:26015" ph="{...}" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/Assets/_Project/Scripts/ScriptableObjects/CommandList.cs">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="510">
+              <caret line="34" column="10" selection-start-line="34" selection-start-column="10" selection-end-line="34" selection-end-column="10" />
+              <folding>
+                <marker date="1613916457200" expanded="true" signature="6:112" ph="..." />
+                <marker date="1613916457200" expanded="true" signature="252:291" ph="{...}" />
+                <marker date="1613916457200" expanded="true" signature="328:398" ph="{...}" />
+                <marker date="1613916457200" expanded="true" signature="444:538" ph="{...}" />
+                <marker date="1613916457200" expanded="true" signature="578:626" ph="{...}" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/Assets/_Project/Scripts/Controllers/SpawnController.cs">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="146">
+              <caret line="16" column="42" lean-forward="true" selection-start-line="16" selection-start-column="42" selection-end-line="16" selection-end-column="42" />
+              <folding>
+                <marker date="1613917398801" expanded="false" signature="6:111" ph="..." />
+                <marker date="1613917398801" expanded="true" signature="157:1484" ph="{...}" />
+                <marker date="1613917398801" expanded="true" signature="372:847" ph="{...}" />
+                <marker date="1613917398801" expanded="true" signature="588:841" ph="{...}" />
+                <marker date="1613917398801" expanded="true" signature="761:831" ph="{...}" />
+                <marker date="1613917398801" expanded="true" signature="892:934" ph="{...}" />
+                <marker date="1613917398801" expanded="true" signature="980:1179" ph="{...}" />
+                <marker date="1613917398801" expanded="true" signature="1036:1173" ph="{...}" />
+                <marker date="1613917398801" expanded="true" signature="1228:1280" ph="{...}" />
+                <marker date="1613917398801" expanded="true" signature="1306:1482" ph="{...}" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+    </leaf>
+  </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>En-</find>
+      <find>DisplayLabel</find>
+      <find>DisplayLabe</find>
+      <find>UpdateUICanvasLabel</find>
+    </findStrings>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/Assets/Scripts/SpeechServiceResult.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Assets/_Project/Scripts/Controllers/SpawnController.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Assets/_Project/Scripts/ScriptableObjects/CommandList.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Assets/Scripts/SecretHelper.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Assets/Scripts/UnityDispatcher.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Assets/Scripts/SpeechRecognitionService.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Assets/Scripts/SpeechManager.cs" root0="FORCE_HIGHLIGHTING" />
+  </component>
+  <component name="IdeDocumentHistory">
+    <option name="CHANGED_PATHS">
+      <list>
+        <option value="$PROJECT_DIR$/Assets/Scripts/SpeechRecognitionService.cs" />
+        <option value="$PROJECT_DIR$/Assets/_Project/SpawnController.cs" />
+        <option value="$PROJECT_DIR$/Assets/Scripts/SpeechManager.cs" />
+        <option value="$PROJECT_DIR$/Assets/_Project/Scripts/ScriptableObjects/CommandList.cs" />
+        <option value="$PROJECT_DIR$/Assets/_Project/Scripts/Controllers/SpawnController.cs" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectFrameBounds">
+    <option name="x" value="102" />
+    <option name="y" value="51" />
+    <option name="width" value="1515" />
+    <option name="height" value="886" />
+  </component>
+  <component name="ProjectView">
+    <navigator currentView="UnityExplorer" proportions="" version="1">
+      <foldersAlwaysOnTop value="true" />
+    </navigator>
+    <panes>
+      <pane id="UnityExplorer">
+        <option name="show-hidden-items" value="false" />
+        <option name="show-project-names" value="true" />
+      </pane>
+      <pane id="FileSystemExplorer" />
+      <pane id="SolutionExplorer">
+        <option name="show-all-files" value="false" />
+      </pane>
+      <pane id="AssemblyExplorer" />
+    </panes>
+  </component>
+  <component name="PropertiesComponent">
+    <property name="Rider.DefaultBreakpoints.AreToggled" value="true" />
+    <property name="Rider.ProjectViewActivator.IsNotFirstRun" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
+    <property name="nodejs_npm_path_reset_for_default_project" value="true" />
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="RunManager" selected="Attach to Unity Editor.Attach to Unity Editor">
+    <configuration name="Attach to Unity Editor &amp; Play" type="UNITY_DEBUG_RUN_CONFIGURATION" factoryName="UNITY_ATTACH_AND_PLAY" show_console_on_std_err="false" show_console_on_std_out="false" port="50000" address="localhost">
+      <option name="allowRunningInParallel" value="false" />
+      <option name="listenPortForConnections" value="false" />
+      <option name="pid" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Attach to Unity Editor" type="UNITY_DEBUG_RUN_CONFIGURATION" factoryName="Unity Debug" show_console_on_std_err="false" show_console_on_std_out="false" port="50000" address="localhost">
+      <option name="allowRunningInParallel" value="false" />
+      <option name="listenPortForConnections" value="false" />
+      <option name="pid" />
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="7f2a75e6-9a2f-4736-aada-8e4e5b868502" name="Default Changelist" comment="" />
+      <created>1613911145413</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1613911145413</updated>
+      <workItem from="1613911152905" duration="3895000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TimeTrackingManager">
+    <option name="totallyTimeSpent" value="3895000" />
+  </component>
+  <component name="TodoView">
+    <todo-panel id="selected-file">
+      <is-autoscroll-to-source value="true" />
+    </todo-panel>
+    <todo-panel id="all">
+      <are-packages-shown value="true" />
+      <is-autoscroll-to-source value="true" />
+    </todo-panel>
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="102" y="51" width="1515" height="886" extended-state="0" />
+    <editor active="true" />
+    <layout>
+      <window_info id="Favorites" side_tool="true" />
+      <window_info id="Image Layers" />
+      <window_info id="Capture Tool" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.24983028" />
+      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
+      <window_info anchor="bottom" id="NuGet" />
+      <window_info anchor="bottom" id="Docker" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Unity" />
+      <window_info anchor="bottom" id="Version Control" />
+      <window_info anchor="bottom" id="Unit Tests" />
+      <window_info anchor="bottom" id="Terminal" />
+      <window_info anchor="bottom" id="Event Log" side_tool="true" />
+      <window_info anchor="bottom" id="Database Changes" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Find" order="1" />
+      <window_info anchor="bottom" id="Run" order="2" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="TODO" order="6" />
+      <window_info anchor="right" id="Capture Analysis" />
+      <window_info anchor="right" id="Errors In Solution" />
+      <window_info anchor="right" id="Database" />
+      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+    </layout>
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="UnityProjectConfiguration" hasMinimizedUI="true" />
+  <component name="UnityUnitTestConfiguration" currentTestLauncher="NUnit" />
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <breakpoint enabled="true" suspend="NONE" type="DotNet Exception Breakpoints">
+          <properties exception="System.Threading.ThreadAbortException" displayValue="System.Threading.ThreadAbortException" />
+          <option name="timeStamp" value="1" />
+        </breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+  <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/Assets/_Project/SpawnController.cs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="210">
+          <caret line="14" column="30" selection-start-line="14" selection-start-column="30" selection-end-line="14" selection-end-column="30" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Assets/Scripts/SpeechRecognitionService.cs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="74">
+          <caret line="415" column="32" selection-start-line="415" selection-start-column="32" selection-end-line="415" selection-end-column="32" />
+          <folding>
+            <marker date="1613911264915" expanded="true" signature="0:1564" ph="/* Copyright (c) Microsoft. All rights reserved. ... */" />
+            <marker date="1613911264915" expanded="false" signature="1572:1955" ph="..." />
+            <marker date="1613911264915" expanded="true" signature="1998:40278" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="2041:40276" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="2056:2248" ph="/* The various job states of the service. Ready &amp; Completed both indicate the service is ready to ... */" />
+            <marker date="1613911264915" expanded="true" signature="2807:2861" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="3243:3636" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="3370:3525" ph="/* Set usebingspeechservice to true in  the client constructor if you want to use the old Bing Speech SDK ... */" />
+            <marker date="1613911264915" expanded="true" signature="3769:8198" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="3795:7879" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="4107:7342" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="4926:5388" ph="/* SENDING AUDIO TO SPEECH SERVICE: ... */" />
+            <marker date="1613911264915" expanded="true" signature="5835:7177" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="7555:7673" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="7719:7835" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="7912:8188" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="8208:8613" ph="/// prepares a new speech recognition job, sending the proper headers including the audio data header ... " />
+            <marker date="1613911264915" expanded="true" signature="8764:12124" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="8790:11861" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="9102:11324" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="9932:10883" ph="/* SENDING AUDIO TO SPEECH SERVICE: ... */" />
+            <marker date="1613911264915" expanded="true" signature="11537:11655" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="11701:11817" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="11894:12114" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="12150:12412" ph="/* Prepares the WebSocket Client with the proper header and Uri for the Speech Service. ... */" />
+            <marker date="1613911264915" expanded="true" signature="13131:13390" ph="/* Clients must use an appropriate endpoint of Speech Service. The endpoint is based on recognition mode and lang ... */" />
+            <marker date="1613911264915" expanded="true" signature="15530:15709" ph="/* Incoming text messages can be hypotheses about the words the service recognized or the final ... */" />
+            <marker date="1613911264915" expanded="true" signature="15978:16174" ph="/* Set the recognized text field in the client for future lookup, this can be stored ... */" />
+            <marker date="1613911264915" expanded="true" signature="16669:16845" ph="/* Raise an event with the message we just received. ... */" />
+            <marker date="1613911264915" expanded="true" signature="17335:17754" ph="/* case WebSocketMessageType.Close: ... */" />
+            <marker date="1613911264915" expanded="true" signature="18679:18941" ph="/// Prepares the WebSocket Client with the proper header and Uri for the Speech Service. ... " />
+            <marker date="1613911264915" expanded="true" signature="19060:20649" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="19673:19932" ph="/* Clients must use an appropriate endpoint of Speech Service. The endpoint is based on recognition mode and lang ... */" />
+            <marker date="1613911264915" expanded="true" signature="20004:20229" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="20246:20453" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="20759:20985" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="21053:21131" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="21273:24511" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="21299:24222" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="21435:24208" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="21755:24190" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="21802:21981" ph="/* Incoming text messages can be hypotheses about the words the service recognized or the final ... */" />
+            <marker date="1613911264915" expanded="true" signature="22253:22449" ph="/* Set the recognized text field in the client for future lookup, this can be stored ... */" />
+            <marker date="1613911264915" expanded="true" signature="22551:22678" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="22781:22915" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="22944:23120" ph="/* Raise an event with the message we just received. ... */" />
+            <marker date="1613911264915" expanded="true" signature="23235:23360" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="24255:24501" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="24528:24750" ph="/// Prepares the payload (with headers) for the very first config message to be sent over WebSocket. ... " />
+            <marker date="1613911264915" expanded="true" signature="24842:25978" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="26023:26988" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="26998:27239" ph="/// CONFIGURING SPEECH SERVICE ... " />
+            <marker date="1613911264915" expanded="true" signature="27298:28019" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="27344:28008" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="27392:27994" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="27447:27516" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="27567:27752" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="27807:27976" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="28093:29160" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="28307:28535" ph="/* The WebSocket Speech protocol docs state that PCM audio must be sampled at 16 kHz with 16 bits per sample ... */" />
+            <marker date="1613911264915" expanded="true" signature="28911:29150" ph="/* SpeechWebSocketClient.SendAsync(arrSeg, WebSocketMessageType.Binary, true, new CancellationToken()); ... */" />
+            <marker date="1613911264915" expanded="true" signature="29170:29551" ph="/// Send an audio message with a zero-length body. This message tells the service that the client knows ... " />
+            <marker date="1613911264915" expanded="true" signature="29815:30357" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="30367:30560" ph="/// Creates the header for an audio message  to be sent via WebSockets. ... " />
+            <marker date="1613911264915" expanded="true" signature="30624:31237" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="31308:31815" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="31825:32486" ph="/// Builds properly formatted header data for RIFF PCM (WAV) audio data ... " />
+            <marker date="1613911264915" expanded="true" signature="32582:34423" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="32729:32958" ph="/* 36 is the total size of the header that follows. We don't count the RIFF line above (4) and this number (4). ... */" />
+            <marker date="1613911264915" expanded="true" signature="34480:34576" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="34647:40270" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="34787:40234" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="34965:35137" ph="/* Parse each line in the WebSocket results to extra the headers and JSON body. ... */" />
+            <marker date="1613911264915" expanded="true" signature="35192:39745" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="35291:39693" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="35356:39670" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="35520:35661" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="35984:36559" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="36169:36525" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="36310:36487" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="36722:38693" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="36898:38659" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="37612:37794" ph="/* jobtelemetry.ReceivedMessages.Append&lt;Receivedmessage&gt;( ... */" />
+            <marker date="1613911264915" expanded="true" signature="38822:39430" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="38893:39115" ph="/* For all non-empty lines past the first three (header), once we encounter an opening brace '{' ... */" />
+            <marker date="1613911264915" expanded="true" signature="39184:39396" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="39467:39605" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="39763:39913" ph="/* Once the full response has been parsed between header and body components, ... */" />
+            <marker date="1613911264915" expanded="true" signature="39954:40220" ph="{...}" />
+            <marker date="1613911264915" expanded="true" signature="40115:40202" ph="{...}" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Assets/Scripts/UnityDispatcher.cs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="388">
+          <caret line="88" column="6" selection-start-line="88" selection-start-column="6" selection-end-line="88" selection-end-column="6" />
+          <folding>
+            <marker date="1613910854374" expanded="false" signature="6:66" ph="..." />
+            <marker date="1613910854374" expanded="true" signature="84:188" ph="/* A helper class for dispatching actions to run on various Unity threads. ... */" />
+            <marker date="1613910854374" expanded="true" signature="228:392" ph="/* Schedules the specified action to be run on Unity's main thread. ... */" />
+            <marker date="1613910854374" expanded="true" signature="704:808" ph="/// A helper class for dispatching actions to run on various Unity threads. ... " />
+            <marker date="1613910854374" expanded="true" signature="853:2722" ph="{...}" />
+            <marker date="1613910854374" expanded="false" signature="860:1076" ph="Member Variables" />
+            <marker date="1613910854374" expanded="false" signature="1082:1456" ph="Internal Methods" />
+            <marker date="1613910854374" expanded="true" signature="1222:1421" ph="{...}" />
+            <marker date="1613910854374" expanded="true" signature="1258:1415" ph="{...}" />
+            <marker date="1613910854374" expanded="false" signature="1462:2103" ph="Unity Overrides" />
+            <marker date="1613910854374" expanded="true" signature="1521:2069" ph="{...}" />
+            <marker date="1613910854374" expanded="true" signature="1672:2063" ph="{...}" />
+            <marker date="1613910854374" expanded="true" signature="2109:2720" ph="Public Methods" />
+            <marker date="1613910854374" expanded="true" signature="2136:2315" ph="/// Schedules the specified action to be run on Unity's main thread. ... " />
+            <marker date="1613910854374" expanded="true" signature="2371:2687" ph="{...}" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Assets/_Project/Scripts/ScriptableObjects/CommandList.cs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="510">
+          <caret line="34" column="10" selection-start-line="34" selection-start-column="10" selection-end-line="34" selection-end-column="10" />
+          <folding>
+            <marker date="1613916457200" expanded="true" signature="6:112" ph="..." />
+            <marker date="1613916457200" expanded="true" signature="252:291" ph="{...}" />
+            <marker date="1613916457200" expanded="true" signature="328:398" ph="{...}" />
+            <marker date="1613916457200" expanded="true" signature="444:538" ph="{...}" />
+            <marker date="1613916457200" expanded="true" signature="578:626" ph="{...}" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Assets/Scripts/SpeechManager.cs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="158">
+          <caret line="389" selection-start-line="389" selection-end-line="389" />
+          <folding>
+            <marker date="1613913092633" expanded="true" signature="0:1676" ph="/* Copyright (c) Microsoft. All rights reserved. ... */" />
+            <marker date="1613913092633" expanded="false" signature="1708:1942" ph="..." />
+            <marker date="1613913092633" expanded="true" signature="1986:26023" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="3473:3691" ph="/// This event is called when speech has ended. ... " />
+            <marker date="1613913092633" expanded="true" signature="3760:3851" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="3906:4591" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="3916:4077" ph="/* Make sure to comment the following line unless you're debugging ... */" />
+            <marker date="1613913092633" expanded="true" signature="4242:4402" ph="/* We need to make sure the microphone records at the same sampling rate as the audio ... */" />
+            <marker date="1613913092633" expanded="true" signature="4651:4658" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="4664:4935" ph="/// InitializeSpeechRecognitionService is used to authenticate the client app ... " />
+            <marker date="1613913092633" expanded="true" signature="4989:7472" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="5004:5719" ph="/* If you see an API key below, it's a trial key and will either expire soon or get invalidated. Please get your  ... */" />
+            <marker date="1613913092633" expanded="true" signature="5976:7121" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="6185:6343" ph="/* Make sure to match the region to the Azure region where you created the service. ... */" />
+            <marker date="1613913092633" expanded="true" signature="6559:6814" ph="/* Since the authentication process needs to run asynchronously, we run the code in a coroutine to ... */" />
+            <marker date="1613913092633" expanded="true" signature="7150:7466" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="7478:7797" ph="/// CoRoutine that checks to see if the async authentication process has completed. Once it completes, ... " />
+            <marker date="1613913092633" expanded="true" signature="7876:8995" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="8012:8063" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="8076:8582" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="8169:8323" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="8328:8572" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="8611:8989" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="9001:9169" ph="/// Feeds a pre-recorded speech audio file to the Speech Recognition service. ... " />
+            <marker date="1613913092633" expanded="true" signature="9218:11010" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="9236:10610" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="9279:10341" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="9310:9520" ph="/* Replace this with your own file. Add it to the project and mark it as &quot;Content&quot; and &quot;Copy if newer&quot;. ... */" />
+            <marker date="1613913092633" expanded="true" signature="9672:9891" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="10358:10599" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="10639:11004" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="11016:11238" ph="/// Starts recording the user's voice via microphone and then feeds the audio data ... " />
+            <marker date="1613913092633" expanded="true" signature="11293:12373" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="11311:11965" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="11354:11696" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="11713:11954" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="11994:12367" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="12379:12519" ph="/// CoRoutine that waits until the Speech Recognition job has been started. ... " />
+            <marker date="1613913092633" expanded="true" signature="12565:14301" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="12749:12800" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="12813:13902" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="12921:13691" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="13708:13891" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="13931:14295" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="14367:14610" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="14496:14547" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="14616:14834" ph="/// RecoServiceClient_OnMessageReceived event handler: ... " />
+            <marker date="1613913092633" expanded="true" signature="14915:16169" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="14933:15779" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="15031:15202" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="15291:15768" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="15340:15413" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="15808:16163" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="16237:16414" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="16291:16406" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="16420:17187" ph="/// OnAudioFilterRead is used to capture live microphone audio when recording or recognizing. ... " />
+            <marker date="1613913092633" expanded="true" signature="17242:21373" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="17260:20974" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="17283:17471" ph="/* Debug.Log($&quot;Received audio data of size: {data.Length} - First sample: {data[0]}&quot;); ... */" />
+            <marker date="1613913092633" expanded="true" signature="17654:20963" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="17801:18204" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="17874:18061" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="18256:20497" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="18439:20029" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="18486:18613" ph="/* Yes this sample was silent. ... */" />
+            <marker date="1613913092633" expanded="true" signature="18652:19016" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="19045:20007" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="19100:19264" ph="/* Looks like we've been in silence for a while. ... */" />
+            <marker date="1613913092633" expanded="true" signature="19314:19981" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="19603:19951" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="20054:20478" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="20101:20201" ph="/* No this sample was not silent. ... */" />
+            <marker date="1613913092633" expanded="true" signature="20239:20456" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="20608:20757" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="20836:20949" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="21003:21367" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="21379:21672" ph="/// Converts audio data from Unity's array of floats to a WAV-compatible byte array. ... " />
+            <marker date="1613913092633" expanded="true" signature="21749:22357" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="21933:22066" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="22363:22474" ph="/// Used only to record the microphone to a WAV file for testing purposes. ... " />
+            <marker date="1613913092633" expanded="true" signature="22507:23203" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="23209:23334" ph="/// Stops the microphone recording and saves to a WAV file. Used to validate WAV format. ... " />
+            <marker date="1613913092633" expanded="true" signature="23366:24093" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="23474:23979" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="23579:23868" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="24099:24280" ph="/// Called when speech has ended. ... " />
+            <marker date="1613913092633" expanded="true" signature="24323:24425" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="24431:24582" ph="/// Saves a byte array of audio samples to a properly formatted WAV file. ... " />
+            <marker date="1613913092633" expanded="true" signature="24662:26021" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="24680:25630" ph="{...}" />
+            <marker date="1613913092633" expanded="true" signature="25659:26015" ph="{...}" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Assets/_Project/Scripts/Controllers/SpawnController.cs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="146">
+          <caret line="16" column="42" lean-forward="true" selection-start-line="16" selection-start-column="42" selection-end-line="16" selection-end-column="42" />
+          <folding>
+            <marker date="1613917398801" expanded="false" signature="6:111" ph="..." />
+            <marker date="1613917398801" expanded="true" signature="157:1484" ph="{...}" />
+            <marker date="1613917398801" expanded="true" signature="372:847" ph="{...}" />
+            <marker date="1613917398801" expanded="true" signature="588:841" ph="{...}" />
+            <marker date="1613917398801" expanded="true" signature="761:831" ph="{...}" />
+            <marker date="1613917398801" expanded="true" signature="892:934" ph="{...}" />
+            <marker date="1613917398801" expanded="true" signature="980:1179" ph="{...}" />
+            <marker date="1613917398801" expanded="true" signature="1036:1173" ph="{...}" />
+            <marker date="1613917398801" expanded="true" signature="1228:1280" ph="{...}" />
+            <marker date="1613917398801" expanded="true" signature="1306:1482" ph="{...}" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+  </component>
+</project>

@@ -413,7 +413,7 @@ namespace SpeechRecognitionService
             string connectionId = Guid.NewGuid().ToString("N");
 
             // Make sure to change the region & culture to match your recorded audio file.
-            string lang = "en-US";
+            string lang = "ru-RU";
             websocketClient.Options.SetRequestHeader("X-ConnectionId", connectionId);
             websocketClient.Options.SetRequestHeader("Authorization", "Bearer " + authenticationToken);
 
