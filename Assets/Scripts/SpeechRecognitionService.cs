@@ -737,7 +737,7 @@ namespace SpeechRecognitionService
                                 }
                                 break;
 
-                            case 1:  // Content-Type & charset on the same line, separated by a semi-colon
+                            case 2:  // Content-Type & charset on the same line, separated by a semi-colon
                                 var sublines = line.Split(new[] { ';' });
 
                                 if (sublines[0].Trim().Substring(0, 12).ToLower() == "content-type")
@@ -755,7 +755,7 @@ namespace SpeechRecognitionService
                                 }
                                 break;
 
-                            case 2:  // Path
+                            case 1:  // Path
                                 if (line.Substring(0, 4).ToLower() == "path")
                                 {
                                     string pathStr = line.Substring(5).Trim().ToLower();
